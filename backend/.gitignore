@@ -1,0 +1,28 @@
+# Node.js dependencies
+/node_modules
+
+# Environment variables
+.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build output (jika ada)
+dist/
+build/
+
+# Coverage (kalau pakai testing)
+coverage/
+
+# VSCode/IDE settings
+.vscode/
+.idea/
