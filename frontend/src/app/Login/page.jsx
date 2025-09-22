@@ -3,11 +3,15 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem("rememberMeDetails");
@@ -29,30 +33,45 @@ export default function LoginPage() {
     e.preventDefault();
     console.log("Login attempt with:", { email, password });
 
-    if (rememberMe) {
-      const expiryTime = new Date().getTime() + 30 * 60 * 1000;
+    const serverResponse = Math.random() > 0.5 ? "success" : "error";
 
-      const rememberMeDetails = {
-        email: email,
-        password: password,
-        expiry: expiryTime,
-      };
-
-      localStorage.setItem(
-        "rememberMeDetails",
-        JSON.stringify(rememberMeDetails)
-      );
-      console.log("Login details saved for 30 minutes.");
+    if (serverResponse === "success") {
+      toast.success("Login Success. Please Wait...");
+      if (rememberMe) {
+        const expiryTime = new Date().getTime() + 30 * 60 * 1000;
+        const rememberMeDetails = {
+          email: email,
+          password: password,
+          expiry: expiryTime,
+        };
+        localStorage.setItem("rememberMeDetails", JSON.stringify(rememberMeDetails));
+        console.log("Login details saved for 30 minutes.");
+      } else {
+        localStorage.removeItem("rememberMeDetails");
+        console.log("Remember me is off. Clearing any saved details.");
+      }
+      // router.push('/dashboard');
     } else {
-      localStorage.removeItem("rememberMeDetails");
-      console.log("Remember me is off. Clearing any saved details.");
+      toast.error("Please Check Your Email or Password");
     }
   };
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gray-900 text-white">
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <div className="flex w-full max-w-4xl rounded-xl bg-gray-800 shadow-lg">
-        {/* Kolom Kiri: Logo & Nama Brand */}
+        {/* Kolom Kiri */}
         <div className="hidden md:flex w-1/2 flex-col items-center justify-center rounded-l-xl bg-gray-700 p-12 text-center">
           <Image
             src="/kanbanLogo.svg"
@@ -63,7 +82,7 @@ export default function LoginPage() {
           <h1 className="mt-4 text-4xl font-bold tracking-wider">KANBAN</h1>
         </div>
 
-        {/* Kolom Kanan: Form Login */}
+        {/* Kolom Kanan */}
         <div className="w-full md:w-1/2 p-8 md:p-12">
           <div className="flex justify-center md:justify-start">
             <Image
@@ -108,17 +127,29 @@ export default function LoginPage() {
               >
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                  placeholder="Create a password"
+                />
+                <div
+                  className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <FiEye className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <FiEyeOff className="h-5 w-5 text-gray-400" />
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -153,7 +184,6 @@ export default function LoginPage() {
               <button
                 type="submit"
                 className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 cursor-pointer"
-                onClick={handleSubmit}
               >
                 Sign in
               </button>
