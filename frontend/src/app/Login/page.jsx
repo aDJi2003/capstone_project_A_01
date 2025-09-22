@@ -6,8 +6,11 @@ import Link from "next/link";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -36,7 +39,6 @@ export default function LoginPage() {
     const serverResponse = Math.random() > 0.5 ? "success" : "error";
 
     if (serverResponse === "success") {
-      toast.success("Login Success. Please Wait...");
       if (rememberMe) {
         const expiryTime = new Date().getTime() + 30 * 60 * 1000;
         const rememberMeDetails = {
@@ -50,7 +52,12 @@ export default function LoginPage() {
         localStorage.removeItem("rememberMeDetails");
         console.log("Remember me is off. Clearing any saved details.");
       }
-      // router.push('/dashboard');
+      toast.success("Login Success. Please Wait...", {
+        autoClose: 2000,
+        onClose: () => {
+          router.push("/Dashboard");
+        },
+      });
     } else {
       toast.error("Please Check Your Email or Password");
     }
