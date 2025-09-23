@@ -2,12 +2,15 @@ import express from 'express';
 import mongoose from 'mongoose';
 import mqtt from 'mqtt';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import Reading from './models/Reading.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+app.use(cors()); 
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB!'))
@@ -54,6 +57,19 @@ client.on('message', async (topic, payload) => {
 
 client.on('error', (err) => {
   console.error('MQTT Connection Error:', err);
+});
+
+app.get('/api/latest-data', async (req, res) => {
+  try {
+    const latestReadings = await Reading.find()
+      .sort({ timestamp: -1 })
+      .limit(20);
+    
+    res.json(latestReadings.reverse());
+  } catch (error) {
+    console.error('Failed to fetch latest data:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
 app.get('/', (req, res) => {

@@ -31,7 +31,7 @@ client.on('connect', () => {
         console.log(`Published to topic [${TOPIC}]:`, payload);
       }
     });
-  }, 2000);
+  }, 1000);
 });
 
 client.on('error', (error) => {

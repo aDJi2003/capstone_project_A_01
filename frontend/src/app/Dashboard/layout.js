@@ -9,9 +9,9 @@ export default function Layout({ children }) {
     <DashboardProvider>
       <div className="flex h-screen bg-gray-900">
         <Sidebar />
-        <div className="flex flex-1 flex-col ml-64">
+        <div className="flex flex-1 flex-col ml-64 overflow-hidden">
           <Header />
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 overflow-y-auto">
             {children}
           </main>
         </div>

@@ -5,7 +5,7 @@ import { FiSearch, FiBell } from 'react-icons/fi';
 
 export default function Header() {
   return (
-    <header className="flex h-16 items-center justify-between bg-gray-800 px-6 border-b border-gray-700">
+    <header className="flex h-16 items-center justify-between bg-gray-800 px-6 border-b border-gray-700 py-2">
       <div className="relative">
         <FiSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
         <input
