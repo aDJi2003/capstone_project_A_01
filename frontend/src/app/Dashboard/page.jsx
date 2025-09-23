@@ -1,40 +1,70 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDashboard } from '@/context/DashboardContext';
 import SensorChart from '@/components/SensorChart';
+import StatCard from '@/components/StatCard';
+import { FiChevronDown } from 'react-icons/fi';
 
 const API_URL = 'http://localhost:5000/api/latest-data';
 
+const thresholds = {
+  Suhu: { upper: 27, lower: 25 },
+  Kelembapan: { upper: 63, lower: 57 },
+  'Intensitas Cahaya': { upper: 650, lower: 250 },
+  'Kualitas Udara': { upper: 350, lower: 100 },
+  'Penggunaan Arus': { upper: 1.2, lower: 0.2 },
+};
+
+const chartOptions = Object.keys(thresholds);
+
 export default function DashboardPage() {
   const { activeMenu } = useDashboard();
+  
+  const [chartData, setChartData] = useState({});
+  const [stats, setStats] = useState({});
 
-  const [suhuData, setSuhuData] = useState({ labels: [], datasets: [] });
-  const [kelembapanData, setKelembapanData] = useState({ labels: [], datasets: [] });
-  const [cahayaData, setCahayaData] = useState({ labels: [], datasets: [] });
-  const [gasData, setGasData] = useState({ labels: [], datasets: [] });
-  const [arusData, setArusData] = useState({ labels: [], datasets: [] });
+  const [selectedChart, setSelectedChart] = useState('all');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const calculateStats = (dataArray = [], threshold) => {
+    if (dataArray.length === 0) return { min: 0, max: 0, avg: 0, exceedCount: 0 };
+
+    const sum = dataArray.reduce((acc, val) => acc + val, 0);
+    const min = Math.min(...dataArray);
+    const max = Math.max(...dataArray);
+    const avg = (sum / dataArray.length).toFixed(2);
+    const exceedCount = dataArray.filter(val => val > threshold.upper || val < threshold.lower).length;
+    
+    return { min, max, avg, exceedCount };
+  };
 
   const formatChartData = (data) => {
     const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
     
     const createDataset = (label, dataKey, color) => ({
       labels,
-      datasets: [{
-        label,
-        data: data.map(d => d[dataKey]),
-        borderColor: color,
-        backgroundColor: `${color}33`,
-        fill: true,
-        tension: 0.3,
-      }]
+      datasets: [{ label, data: data.map(d => d[dataKey]), borderColor: color, backgroundColor: `${color}33`, fill: true, tension: 0.3 }]
     });
+
+    const newChartData = {
+      'Suhu': createDataset('Suhu', 'suhu', '#34d399'),
+      'Kelembapan': createDataset('Kelembapan', 'kelembapan', '#60a5fa'),
+      'Intensitas Cahaya': createDataset('Intensitas Cahaya', 'cahaya', '#facc15'),
+      'Kualitas Udara': createDataset('Kualitas Udara', 'gas', '#f87171'),
+      'Penggunaan Arus': createDataset('Penggunaan Arus', 'arus', '#c084fc'),
+    };
     
-    setSuhuData(createDataset('Suhu', 'suhu', '#34d399'));
-    setKelembapanData(createDataset('Kelembapan', 'kelembapan', '#60a5fa'));
-    setCahayaData(createDataset('Cahaya', 'cahaya', '#facc15'));
-    setGasData(createDataset('Kualitas Udara', 'gas', '#f87171'));
-    setArusData(createDataset('Arus Listrik', 'arus', '#c084fc'));
+    setChartData(newChartData);
+
+    if (selectedChart !== 'all') {
+      const currentData = newChartData[selectedChart]?.datasets[0]?.data;
+      const currentThresholds = thresholds[selectedChart];
+      if (currentData && currentThresholds) {
+        setStats(calculateStats(currentData, currentThresholds));
+      }
+    }
   };
   
   useEffect(() => {
@@ -42,22 +72,28 @@ export default function DashboardPage() {
       try {
         const response = await fetch(API_URL);
         const data = await response.json();
-        console.log("Fetched data from backend:", data);
         formatChartData(data);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
-    
     fetchData(); 
-
     const intervalId = setInterval(fetchData, 1000);
-
     return () => clearInterval(intervalId);
-  }, []);
+  }, [selectedChart]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownRef]);
 
   if (activeMenu !== 'Dashboard') {
-    return (
+    return ( 
       <div>
         <h1 className="text-2xl font-semibold text-white">{activeMenu}</h1>
         <p className="mt-2 text-gray-300">
@@ -66,17 +102,77 @@ export default function DashboardPage() {
       </div>
     );
   }
+  
+  const getUnit = (chartName) => {
+    const units = { 'Suhu': '°C', 'Kelembapan': '%', 'Intensitas Cahaya': 'lux', 'Kualitas Udara': 'ppm', 'Penggunaan Arus': 'A' };
+    return units[chartName] || '';
+  };
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-white mb-6">Dashboard Overview</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SensorChart title="Suhu" chartData={suhuData} unit="°C" />
-        <SensorChart title="Kelembapan" chartData={kelembapanData} unit="%" />
-        <SensorChart title="Intensitas Cahaya" chartData={cahayaData} unit="lux" />
-        <SensorChart title="Kualitas Udara" chartData={gasData} unit="ppm" />
-        <SensorChart title="Penggunaan Arus" chartData={arusData} unit="A" />
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold text-white">Dashboard Overview</h1>
+        
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center justify-between w-56 px-4 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            <span>View: {selectedChart === 'all' ? 'All Charts' : selectedChart}</span>
+            <FiChevronDown className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+          
+          {isDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-56 bg-gray-700 rounded-lg shadow-xl z-10">
+              <ul>
+                <li onClick={() => { setSelectedChart('all'); setIsDropdownOpen(false); }} className="px-4 py-2 hover:bg-gray-600 cursor-pointer rounded-t-lg">All Charts</li>
+                {chartOptions.map(option => (
+                  <li key={option} onClick={() => { setSelectedChart(option); setIsDropdownOpen(false); }} className="px-4 py-2 hover:bg-gray-600 cursor-pointer last:rounded-b-lg">{option}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
+      
+      {selectedChart === 'all' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {chartOptions.map(option => (
+            <SensorChart 
+              key={option} 
+              title={option} 
+              chartData={chartData[option] || { labels: [], datasets: [] }} 
+              unit={getUnit(option)}
+              thresholds={thresholds[option]}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <SensorChart 
+              title={selectedChart} 
+              chartData={chartData[selectedChart] || { labels: [], datasets: [] }} 
+              unit={getUnit(selectedChart)}
+              thresholds={thresholds[selectedChart]}
+            />
+          </div>
+          <div className="flex flex-col gap-4">
+            <div className='grid grid-cols-2 gap-4'>
+                <StatCard title="Max Value" value={stats.max} unit={getUnit(selectedChart)} />
+                <StatCard title="Min Value" value={stats.min} unit={getUnit(selectedChart)} />
+            </div>
+            <StatCard title="Average" value={stats.avg} unit={getUnit(selectedChart)} />
+            <StatCard title="Exceed Count" value={stats.exceedCount} />
+            <div className="bg-gray-800 p-4 rounded-lg shadow-lg">
+                <p className="text-sm text-gray-400">Normal Threshold</p>
+                <p className="text-lg font-semibold text-white">
+                    {thresholds[selectedChart]?.lower} {getUnit(selectedChart)} - {thresholds[selectedChart]?.upper} {getUnit(selectedChart)}
+                </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

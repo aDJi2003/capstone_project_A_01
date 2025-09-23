@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import annotationPlugin from 'chartjs-plugin-annotation';
 
 ChartJS.register(
   CategoryScale,
@@ -19,28 +20,64 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  annotationPlugin 
 );
 
-export default function SensorChart({ title, chartData, unit }) {
+export default function SensorChart({ title, chartData, unit, thresholds = {} }) {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
-        labels: {
-          color: '#e5e7eb',
-        },
+        labels: { color: '#e5e7eb' },
       },
       title: {
         display: true,
         text: `${title} (${unit})`,
         color: '#f9fafb',
-        font: {
-          size: 16,
-        },
+        font: { size: 16 },
       },
+
+      annotation: {
+        annotations: {
+          upperThreshold: {
+            type: 'line',
+            yMin: thresholds.upper,
+            yMax: thresholds.upper,
+            borderColor: 'rgb(239, 68, 68, 0.7)',
+            borderWidth: 2,
+            borderDash: [6, 6],
+            label: {
+              content: `Upper Limit: ${thresholds.upper}`,
+              enabled: true,
+              position: 'end',
+              backgroundColor: 'rgba(239, 68, 68, 0.7)',
+              font: {
+                size: 10
+              }
+            }
+          },
+          lowerThreshold: {
+            type: 'line',
+            yMin: thresholds.lower,
+            yMax: thresholds.lower,
+            borderColor: 'rgb(239, 68, 68, 0.7)',
+            borderWidth: 2,
+            borderDash: [6, 6],
+            label: {
+              content: `Lower Limit: ${thresholds.lower}`,
+              enabled: true,
+              position: 'end',
+              backgroundColor: 'rgba(239, 68, 68, 0.7)',
+              font: {
+                size: 10
+              }
+            }
+          }
+        }
+      }
     },
     scales: {
       x: {
@@ -55,7 +92,7 @@ export default function SensorChart({ title, chartData, unit }) {
   };
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg shadow-lg h-72">
+    <div className="bg-gray-800 p-4 rounded-lg shadow-lg h-92">
       <Line options={options} data={chartData} />
     </div>
   );
