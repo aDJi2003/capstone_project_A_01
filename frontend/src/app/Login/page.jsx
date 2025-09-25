@@ -213,21 +213,6 @@ export default function LoginPage() {
                 Sign in
               </button>
             </div>
-            <div>
-              <button
-                type="button"
-                className="flex w-full items-center justify-center rounded-md border border-gray-600 bg-gray-800 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 cursor-pointer"
-              >
-                <Image
-                  src="/googleLogo.png"
-                  alt="Google Icon"
-                  width={20}
-                  height={20}
-                  className="mr-2"
-                />
-                Sign in with Google
-              </button>
-            </div>
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-400 cursor-pointer">

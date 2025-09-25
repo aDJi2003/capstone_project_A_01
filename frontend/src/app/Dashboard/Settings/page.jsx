@@ -3,12 +3,17 @@
 import { useState, useEffect } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 export default function SettingsPage() {
   const [userEmail, setUserEmail] = useState('Loading...');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -72,7 +77,6 @@ export default function SettingsPage() {
       <ToastContainer theme="dark" position="top-right" autoClose={3000} />
       <h1 className="text-2xl font-semibold text-white">Settings</h1>
       
-      {/* Card ganti password */}
       <div className="mt-6 max-w-full bg-gray-800 rounded-xl shadow-lg border border-gray-700">
         <div className="p-6">
           <h2 className="text-lg font-semibold text-white">Change Password</h2>
@@ -81,36 +85,54 @@ export default function SettingsPage() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300">Current Password</label>
-              <input 
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-                className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-              />
+              <div className="relative">
+                <input 
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                  className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                />
+                <div className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
+                  {showCurrentPassword ? <FiEye className="h-5 w-5 text-gray-400" /> : <FiEyeOff className="h-5 w-5 text-gray-400" />}
+                </div>
+              </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300">New Password</label>
-              <input 
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-              />
+              <div className="relative">
+                <input 
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                />
+                <div className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3" onClick={() => setShowNewPassword(!showNewPassword)}>
+                  {showNewPassword ? <FiEye className="h-5 w-5 text-gray-400" /> : <FiEyeOff className="h-5 w-5 text-gray-400" />}
+                </div>
+              </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300">Confirm New Password</label>
-              <input 
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-              />
+              <div className="relative">
+                <input 
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                />
+                 <div className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  {showConfirmPassword ? <FiEye className="h-5 w-5 text-gray-400" /> : <FiEyeOff className="h-5 w-5 text-gray-400" />}
+                </div>
+              </div>
             </div>
+
             <div className="pt-2 flex justify-end">
-              <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">
+              <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors cursor-pointer">
                 Update Password
               </button>
             </div>

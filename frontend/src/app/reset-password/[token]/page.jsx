@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useRouter } from 'next/navigation';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 export default function ResetPasswordPage({ params }) {
   const { token } = params;
@@ -11,10 +12,16 @@ export default function ResetPasswordPage({ params }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       return toast.error("Passwords do not match.");
+    }
+    if (password.length < 8) {
+      return toast.warn("Password must be at least 8 characters.");
     }
     try {
       const response = await fetch(`http://localhost:5000/api/auth/reset-password/${token}`, {
@@ -42,19 +49,40 @@ export default function ResetPasswordPage({ params }) {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="password">New Password</label>
-            <input
-              id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white"
+              />
+              <div className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <FiEye className="h-5 w-5 text-gray-400" /> : <FiEyeOff className="h-5 w-5 text-gray-400" />}
+              </div>
+            </div>
+             <p className="mt-2 text-xs text-gray-400">Must be at least 8 characters.</p>
           </div>
+          
           <div>
             <label htmlFor="confirmPassword">Confirm New Password</label>
-            <input
-              id="confirmPassword" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white"
-            />
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white"
+              />
+              <div className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                {showConfirmPassword ? <FiEye className="h-5 w-5 text-gray-400" /> : <FiEyeOff className="h-5 w-5 text-gray-400" />}
+              </div>
+            </div>
           </div>
-          <button type="submit" className="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-blue-600 hover:bg-blue-700">
+
+          <button type="submit" className="w-full flex justify-center py-2 px-4 rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer">
             Update Password
           </button>
         </form>
