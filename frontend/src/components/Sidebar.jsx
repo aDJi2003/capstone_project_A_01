@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
+import { useDashboard } from '@/context/DashboardContext';
 import Modal from './Modal';
 import { 
   FiGrid, FiArchive, FiBarChart2, FiUsers, FiSettings, FiLogOut, FiSliders 
@@ -15,12 +16,16 @@ const menuItems = [
   { name: 'History', icon: FiArchive, path: '/Dashboard/History' },
   { name: 'Reports', icon: FiBarChart2, path: '/Dashboard/Reports' },
   { name: 'System Control', icon: FiSliders, path: '/Dashboard/SystemControl' },
-  { name: 'User Management', icon: FiUsers, path: '/Dashboard/UserManagement' },
 ];
+
+const adminMenuItems = [
+    { name: 'User Management', icon: FiUsers, path: '/Dashboard/UserManagement' },
+]
 
 export default function Sidebar() { 
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useDashboard();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -51,6 +56,21 @@ export default function Sidebar() {
                 </Link>
               </li>
             ))}
+            {user && user.role === 'admin' && adminMenuItems.map((item) => (
+             <li key={item.name}>
+              <Link
+                href={item.path}
+                className={`flex items-center p-3 my-1 rounded-lg transition-colors
+                  ${pathname === item.path
+                    ? 'bg-blue-600 text-white'
+                    : 'hover:bg-gray-700'
+                  }`}
+              >
+                <item.icon className="h-5 w-5 mr-3" />
+                <span>{item.name}</span>
+              </Link>
+            </li>
+          ))}
           </ul>
         </nav>
         <div className="absolute bottom-0 w-full p-4 border-t border-gray-700">

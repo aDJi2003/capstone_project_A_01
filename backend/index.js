@@ -202,7 +202,6 @@ app.get('/api/history/stats', protect, async (req, res) => {
     return res.status(400).json({ message: 'startTime, endTime, and sensorType are required' });
   }
 
-  // Membuat field dinamis untuk agregasi
   const field1 = `$${sensorType}.sensor1`;
   const field2 = `$${sensorType}.sensor2`;
 
@@ -230,7 +229,6 @@ app.get('/api/history/chart', protect, async (req, res) => {
     return res.status(400).json({ message: 'startTime, endTime, and sensorType are required' });
   }
 
-  // Membuat field dinamis untuk output bucket
   const outputFields = {
     avgSensor1: { $avg: `$${sensorType}.sensor1` },
     avgSensor2: { $avg: `$${sensorType}.sensor2` },
@@ -250,6 +248,47 @@ app.get('/api/history/chart', protect, async (req, res) => {
     res.json(chartData);
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+app.get('/api/users', protect, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden: Admins only' });
+  }
+
+  try {
+    const users = await User.find({}).select('-password');
+    res.json(users);
+  } catch (error) {
+    res.status(500).send('Server Error');
+  }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+  const { name, email, password } = req.body;
+
+  try {
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ message: 'User with this email already exists.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'user',
+    });
+
+    await user.save();
+
+    res.status(201).json({ message: 'User registered successfully. Please log in.' });
+
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Server Error');
   }
 });
 
