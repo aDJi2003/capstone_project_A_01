@@ -9,6 +9,7 @@ import crypto from 'crypto';
 
 import Reading from './models/Reading.js';
 import User from './models/User.js';
+import { protect } from './middleware/authMiddleware.js';
 
 dotenv.config();
 
@@ -164,6 +165,31 @@ app.post('/api/auth/reset-password/:token', async (req, res) => {
     await user.save();
 
     res.json({ message: 'Password has been updated successfully.' });
+
+  } catch (error) {
+    res.status(500).send('Server Error');
+  }
+});
+
+app.get('/api/users/me', protect, (req, res) => {
+  res.json(req.user);
+});
+
+app.post('/api/users/change-password', protect, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Incorrect current password.' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: 'Password updated successfully.' });
 
   } catch (error) {
     res.status(500).send('Server Error');
