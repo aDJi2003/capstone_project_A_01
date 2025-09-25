@@ -32,34 +32,52 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login attempt with:", { email, password });
+    
+    if (!email || !password) {
+      toast.warn("Please enter both email and password.");
+      return;
+    }
 
-    const serverResponse = Math.random() > 0.5 ? "success" : "error";
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (serverResponse === "success") {
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || 'Login failed. Please check your credentials.');
+        return;
+      }
+      
+      toast.success('Login Success! Redirecting to dashboard...');
+      localStorage.setItem('token', data.token);
+
       if (rememberMe) {
-        const expiryTime = new Date().getTime() + 30 * 60 * 1000;
+        const expiryTime = new Date().getTime() + 60 * 60 * 1000;
         const rememberMeDetails = {
           email: email,
           password: password,
           expiry: expiryTime,
         };
-        localStorage.setItem("rememberMeDetails", JSON.stringify(rememberMeDetails));
-        console.log("Login details saved for 30 minutes.");
+        localStorage.setItem('rememberMeDetails', JSON.stringify(rememberMeDetails));
       } else {
-        localStorage.removeItem("rememberMeDetails");
-        console.log("Remember me is off. Clearing any saved details.");
+        localStorage.removeItem('rememberMeDetails');
       }
-      toast.success("Login Success. Please Wait...", {
-        autoClose: 2000,
-        onClose: () => {
-          router.push("/Dashboard");
-        },
-      });
-    } else {
-      toast.error("Please Check Your Email or Password");
+
+      setTimeout(() => {
+        router.push('/Dashboard');
+      }, 2000);
+
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('An error occurred while trying to log in. Please try again.');
     }
   };
 
@@ -67,7 +85,7 @@ export default function LoginPage() {
     <div className="flex h-screen w-full items-center justify-center bg-gray-900 text-white">
       <ToastContainer
         position="top-right"
-        autoClose={5000}
+        autoClose={1500}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
@@ -173,7 +191,7 @@ export default function LoginPage() {
                   htmlFor="remember-me"
                   className="ml-2 block text-sm text-gray-300"
                 >
-                  Remember for 30 minutes
+                  Remember me
                 </label>
               </div>
 

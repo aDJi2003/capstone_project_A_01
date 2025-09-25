@@ -3,14 +3,18 @@ import mongoose from 'mongoose';
 import mqtt from 'mqtt';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import Reading from './models/Reading.js';
+import User from './models/User.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors()); 
+app.use(cors());
+app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB!'))
@@ -69,6 +73,43 @@ app.get('/api/latest-data', async (req, res) => {
   } catch (error) {
     console.error('Failed to fetch latest data:', error);
     res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const payload = {
+      user: {
+        id: user.id,
+        role: user.role,
+      },
+    };
+
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' },
+      (err, token) => {
+        if (err) throw err;
+        res.json({ token });
+      }
+    );
+
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Server Error');
   }
 });
 
