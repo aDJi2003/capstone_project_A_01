@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+
 import Reading from './models/Reading.js';
 import User from './models/User.js';
 
@@ -109,6 +111,61 @@ app.post('/api/auth/login', async (req, res) => {
 
   } catch (error) {
     console.error(error.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'No user found with that email address.' });
+    }
+
+    const token = crypto.randomBytes(20).toString('hex');
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000;
+
+    await user.save();
+
+    const resetLink = `http://localhost:3000/reset-password/${token}`;
+    
+    console.log('--------------------');
+    console.log('PASSWORD RESET LINK (COPY TO BROWSER):');
+    console.log(resetLink);
+    console.log('--------------------');
+
+    res.json({ message: 'A password reset link has been generated. Check the backend console.' });
+
+  } catch (error) {
+    res.status(500).send('Server Error');
+  }
+});
+
+app.post('/api/auth/reset-password/:token', async (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    const user = await User.findOne({
+      resetPasswordToken: req.params.token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Password reset token is invalid or has expired.' });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.json({ message: 'Password has been updated successfully.' });
+
+  } catch (error) {
     res.status(500).send('Server Error');
   }
 });
