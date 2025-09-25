@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import { FiSearch, FiBell } from 'react-icons/fi';
+import ProfileDropdown from './ProfileDropdown';
 
 export default function Header() {
   return (
@@ -19,13 +19,7 @@ export default function Header() {
           <FiBell className="h-6 w-6 text-gray-400 hover:text-white" />
           <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">2</span>
         </button>
-        <Image
-          src="/profileAvatar.svg"
-          alt="Profile Avatar"
-          width={40}
-          height={40}
-          className="rounded-full"
-        />
+        <ProfileDropdown />
       </div>
     </header>
   );
