@@ -6,7 +6,7 @@ import SensorChart from '@/components/SensorChart';
 import StatCard from '@/components/StatCard';
 import { FiChevronDown } from 'react-icons/fi';
 
-const API_URL = 'http://localhost:5000/api/latest-data';
+const API_URL = 'http://localhost:5000/api/data/latest';
 
 const thresholds = {
   Suhu: { upper: 27, lower: 25 },

@@ -3,13 +3,11 @@ import mongoose from 'mongoose';
 import mqtt from 'mqtt';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 
 import Reading from './models/Reading.js';
-import User from './models/User.js';
-import { protect } from './middleware/authMiddleware.js';
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import dataRoutes from './routes/dataRoutes.js';
 
 dotenv.config();
 
@@ -25,36 +23,15 @@ mongoose.connect(process.env.MONGO_URI)
 
 const BROKER_URL = 'mqtt://localhost:1883';
 const TOPIC = 'building/room/data';
-
-const client = mqtt.connect(BROKER_URL, {
-  clientId: `mqtt_backend_subscriber_${Math.random().toString(16).slice(3)}`,
-});
-
+const client = mqtt.connect(BROKER_URL);
 client.on('connect', () => {
   console.log('MQTT Backend connected to Broker!');
-  client.subscribe([TOPIC], (err) => {
-    if (!err) {
-      console.log(`Subscribed to topic: [${TOPIC}]`);
-    } else {
-      console.error('Subscription error:', err);
-    }
-  });
+  client.subscribe([TOPIC]);
 });
-
 client.on('message', async (topic, payload) => {
-  console.log(`Message received from topic [${topic}]: ${payload.toString()}`);
-
   try {
     const data = JSON.parse(payload.toString());
-
-    const newReading = new Reading({
-      suhu: data.suhu,
-      kelembapan: data.kelembapan,
-      cahaya: data.cahaya,
-      gas: data.gas,
-      arus: data.arus,
-    });
-
+    const newReading = new Reading(data);
     await newReading.save();
     console.log('Data saved to MongoDB!');
   } catch (error) {
@@ -62,196 +39,9 @@ client.on('message', async (topic, payload) => {
   }
 });
 
-client.on('error', (err) => {
-  console.error('MQTT Connection Error:', err);
-});
-
-app.get('/api/latest-data', async (req, res) => {
-  try {
-    const latestReadings = await Reading.find()
-      .sort({ timestamp: -1 })
-      .limit(20);
-    
-    res.json(latestReadings.reverse());
-  } catch (error) {
-    console.error('Failed to fetch latest data:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-});
-
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    const payload = {
-      user: {
-        id: user.id,
-        role: user.role,
-      },
-    };
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      }
-    );
-
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server Error');
-  }
-});
-
-app.post('/api/auth/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ message: 'No user found with that email address.' });
-    }
-
-    const token = crypto.randomBytes(20).toString('hex');
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000;
-
-    await user.save();
-
-    const resetLink = `http://localhost:3000/reset-password/${token}`;
-    
-    console.log('--------------------');
-    console.log('PASSWORD RESET LINK (COPY TO BROWSER):');
-    console.log(resetLink);
-    console.log('--------------------');
-
-    res.json({ message: 'A password reset link has been generated. Check the backend console.' });
-
-  } catch (error) {
-    res.status(500).send('Server Error');
-  }
-});
-
-app.post('/api/auth/reset-password/:token', async (req, res) => {
-  try {
-    const { password } = req.body;
-    
-    const user = await User.findOne({
-      resetPasswordToken: req.params.token,
-      resetPasswordExpires: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: 'Password reset token is invalid or has expired.' });
-    }
-
-    user.password = await bcrypt.hash(password, 10);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-
-    await user.save();
-
-    res.json({ message: 'Password has been updated successfully.' });
-
-  } catch (error) {
-    res.status(500).send('Server Error');
-  }
-});
-
-app.get('/api/users/me', protect, (req, res) => {
-  res.json(req.user);
-});
-
-app.post('/api/users/change-password', protect, async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-
-  try {
-    const user = await User.findById(req.user.id);
-
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Incorrect current password.' });
-    }
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-
-    res.json({ message: 'Password updated successfully.' });
-
-  } catch (error) {
-    res.status(500).send('Server Error');
-  }
-});
-
-app.get('/api/history/stats', protect, async (req, res) => {
-  const { startTime, endTime, sensorType } = req.query;
-  if (!startTime || !endTime || !sensorType) {
-    return res.status(400).json({ message: 'startTime, endTime, and sensorType are required' });
-  }
-
-  // Membuat field dinamis untuk agregasi
-  const field1 = `$${sensorType}.sensor1`;
-  const field2 = `$${sensorType}.sensor2`;
-
-  try {
-    const stats = await Reading.aggregate([
-      { $match: { timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) } } },
-      {
-        $group: {
-          _id: null,
-          maxValue: { $max: { $max: [field1, field2] } },
-          minValue: { $min: { $min: [field1, field2] } },
-          avgValue: { $avg: { $avg: [field1, field2] } },
-        }
-      }
-    ]);
-    res.json(stats[0] || {});
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
-  }
-});
-
-app.get('/api/history/chart', protect, async (req, res) => {
-  const { startTime, endTime, sensorType } = req.query;
-  if (!startTime || !endTime || !sensorType) {
-    return res.status(400).json({ message: 'startTime, endTime, and sensorType are required' });
-  }
-
-  // Membuat field dinamis untuk output bucket
-  const outputFields = {
-    avgSensor1: { $avg: `$${sensorType}.sensor1` },
-    avgSensor2: { $avg: `$${sensorType}.sensor2` },
-  };
-
-  try {
-    const chartData = await Reading.aggregate([
-      { $match: { timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) } } },
-      {
-        $bucketAuto: {
-          groupBy: "$timestamp",
-          buckets: 20,
-          output: outputFields
-        }
-      }
-    ]);
-    res.json(chartData);
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
-  }
-});
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/data', dataRoutes);
 
 app.get('/', (req, res) => {
   res.send('Backend Server is running.');
