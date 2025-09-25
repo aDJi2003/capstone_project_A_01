@@ -56,8 +56,8 @@ export default function HistoryPage() {
 
       try {
         const [statsRes, chartRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/data/history/stats?${params}`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`http://localhost:5000/api/data/history/chart?${params}`, { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`http://localhost:5000/api/history/stats?${params}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`http://localhost:5000/api/history/chart?${params}`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
 
         if (!statsRes.ok || !chartRes.ok) throw new Error('Failed to fetch history data');
