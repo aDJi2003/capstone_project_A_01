@@ -15,11 +15,26 @@ client.on('connect', () => {
   console.log('Connected to MQTT Broker!');
   setInterval(() => {
     const data = {
-      suhu: getRandomValue(24, 28),
-      kelembapan: getRandomValue(55, 65),
-      cahaya: getRandomValue(200, 700, 0),
-      gas: getRandomValue(150, 400, 0),
-      arus: getRandomValue(0.1, 1.5)
+      suhu: {
+        sensor1: getRandomValue(24, 28),
+        sensor2: getRandomValue(24.5, 28.5)
+      },
+      kelembapan: {
+        sensor1: getRandomValue(55, 65),
+        sensor2: getRandomValue(57, 67)
+      },
+      cahaya: {
+        sensor1: getRandomValue(200, 700, 0),
+        sensor2: getRandomValue(250, 750, 0)
+      },
+      gas: {
+        sensor1: getRandomValue(150, 400, 0),
+        sensor2: getRandomValue(160, 410, 0)
+      },
+      arus: {
+        sensor1: getRandomValue(0.1, 1.5),
+        sensor2: getRandomValue(0.15, 1.6)
+      }
     };
 
     const payload = JSON.stringify(data);

@@ -10,7 +10,7 @@ const API_URL = 'http://localhost:5000/api/latest-data';
 
 const thresholds = {
   Suhu: { upper: 27, lower: 25 },
-  Kelembapan: { upper: 63, lower: 57 },
+  Kelembapan: { upper: 65, lower: 55 },
   'Intensitas Cahaya': { upper: 650, lower: 250 },
   'Kualitas Udara': { upper: 350, lower: 100 },
   'Penggunaan Arus': { upper: 1.2, lower: 0.2 },
@@ -30,44 +30,34 @@ export default function DashboardPage() {
 
   const calculateStats = (dataArray = [], threshold) => {
     if (dataArray.length === 0) return { min: 0, max: 0, avg: 0, exceedCount: 0 };
-
     const sum = dataArray.reduce((acc, val) => acc + val, 0);
     const min = Math.min(...dataArray);
     const max = Math.max(...dataArray);
     const avg = (sum / dataArray.length).toFixed(2);
     const exceedCount = dataArray.filter(val => val > threshold.upper || val < threshold.lower).length;
-    
     return { min, max, avg, exceedCount };
   };
 
-  const formatChartData = (data) => {
-    const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
-    
-    const createDataset = (label, dataKey, color) => ({
-      labels,
-      datasets: [{ label, data: data.map(d => d[dataKey]), borderColor: color, backgroundColor: `${color}33`, fill: true, tension: 0.3 }]
-    });
-
-    const newChartData = {
-      'Suhu': createDataset('Suhu', 'suhu', '#34d399'),
-      'Kelembapan': createDataset('Kelembapan', 'kelembapan', '#60a5fa'),
-      'Intensitas Cahaya': createDataset('Intensitas Cahaya', 'cahaya', '#facc15'),
-      'Kualitas Udara': createDataset('Kualitas Udara', 'gas', '#f87171'),
-      'Penggunaan Arus': createDataset('Penggunaan Arus', 'arus', '#c084fc'),
-    };
-    
-    setChartData(newChartData);
-
-    if (selectedChart !== 'all') {
-      const currentData = newChartData[selectedChart]?.datasets[0]?.data;
-      const currentThresholds = thresholds[selectedChart];
-      if (currentData && currentThresholds) {
-        setStats(calculateStats(currentData, currentThresholds));
-      }
-    }
-  };
-  
   useEffect(() => {
+    const formatChartData = (data) => {
+      const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
+      const createDataset = (label, dataKey, colors) => ({
+        labels,
+        datasets: [
+          { label: `${label} Sensor 1`, data: data.map(d => d[dataKey].sensor1), borderColor: colors[0], backgroundColor: `${colors[0]}33`, fill: true, tension: 0.3 },
+          { label: `${label} Sensor 2`, data: data.map(d => d[dataKey].sensor2), borderColor: colors[1], backgroundColor: `${colors[1]}33`, fill: true, tension: 0.3 }
+        ]
+      });
+      const newChartData = {
+        'Suhu': createDataset('Suhu', 'suhu', ['#34d399', '#a7f3d0']),
+        'Kelembapan': createDataset('Kelembapan', 'kelembapan', ['#60a5fa', '#a5b4fc']),
+        'Intensitas Cahaya': createDataset('Intensitas Cahaya', 'cahaya', ['#facc15', '#fde68a']),
+        'Kualitas Udara': createDataset('Kualitas Udara', 'gas', ['#f87171', '#fca5a5']),
+        'Penggunaan Arus': createDataset('Penggunaan Arus', 'arus', ['#c084fc', '#d8b4fe']),
+      };
+      setChartData(newChartData);
+    };
+
     const fetchData = async () => {
       try {
         const response = await fetch(API_URL);
@@ -77,10 +67,23 @@ export default function DashboardPage() {
         console.error('Error fetching data:', error);
       }
     };
-    fetchData(); 
+    fetchData();
     const intervalId = setInterval(fetchData, 1000);
     return () => clearInterval(intervalId);
-  }, [selectedChart]);
+  }, []);
+
+  useEffect(() => {
+    if (selectedChart !== 'all' && chartData[selectedChart]) {
+      const dataSensor1 = chartData[selectedChart]?.datasets[0]?.data || [];
+      const dataSensor2 = chartData[selectedChart]?.datasets[1]?.data || [];
+      const combinedData = [...dataSensor1, ...dataSensor2];
+      const currentThresholds = thresholds[selectedChart];
+      
+      if (combinedData.length > 0 && currentThresholds) {
+        setStats(calculateStats(combinedData, currentThresholds));
+      }
+    }
+  }, [chartData, selectedChart]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -116,14 +119,14 @@ export default function DashboardPage() {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center justify-between w-56 px-4 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            className="flex items-center justify-between w-56 px-4 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <span>View: {selectedChart === 'all' ? 'All Charts' : selectedChart}</span>
             <FiChevronDown className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
           
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-gray-700 rounded-lg shadow-xl z-10">
+            <div className="absolute right-0 mt-2 w-48 bg-gray-700 rounded-lg shadow-xl z-10 cursor-pointer text-white">
               <ul>
                 <li onClick={() => { setSelectedChart('all'); setIsDropdownOpen(false); }} className="px-4 py-2 hover:bg-gray-600 cursor-pointer rounded-t-lg">All Charts</li>
                 {chartOptions.map(option => (
