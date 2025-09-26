@@ -6,8 +6,11 @@ import ProfileDropdown from "./ProfileDropdown";
 import NotificationDropdown from './NotificationDropdown';
 import SearchResultsDropdown from './SearchResultsDropdown';
 import ClientOnly from './ClientOnly';
+import { useDashboard } from '@/context/DashboardContext';
 
 export default function Header() {
+  const { user } = useDashboard();
+
   const [notifications, setNotifications] = useState([]);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
   const notificationRef = useRef(null);
@@ -100,7 +103,7 @@ export default function Header() {
             placeholder="Search something..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-96 rounded-lg border border-gray-600 bg-gray-700 py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-96 rounded-lg border border-gray-600 bg-gray-700 py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:outline-none"
           />
         </ClientOnly>
         {searchTerm && (
@@ -108,11 +111,12 @@ export default function Header() {
             results={searchResults} 
             loading={loadingSearch}
             onResultClick={() => setSearchTerm('')}
+            user={user}
           />
         )}
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-4 mt-1">
         <div className="relative" ref={notificationRef}>
           <button onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)} className="relative">
             <FiBell className="h-6 w-6 text-gray-400 hover:text-white" />
