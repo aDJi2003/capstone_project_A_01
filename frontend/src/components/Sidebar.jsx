@@ -15,10 +15,10 @@ const menuItems = [
   { name: 'Dashboard', icon: FiGrid, path: '/Dashboard' },
   { name: 'History', icon: FiArchive, path: '/Dashboard/History' },
   { name: 'Reports', icon: FiBarChart2, path: '/Dashboard/Reports' },
-  { name: 'System Control', icon: FiSliders, path: '/Dashboard/SystemControl' },
 ];
 
 const adminMenuItems = [
+    { name: 'System Control', icon: FiSliders, path: '/Dashboard/SystemControl' },
     { name: 'User Management', icon: FiUsers, path: '/Dashboard/UserManagement' },
 ]
 

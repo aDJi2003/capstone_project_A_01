@@ -46,7 +46,7 @@ const ActuatorCard = ({ icon, name, index, onCommand, activeLevel }) => {
 
 
 export default function SystemControlPage() {
-  const { actuatorStates, updateActuatorState } = useDashboard();
+  const { actuatorStates, updateActuatorState, user } = useDashboard();
 
   const sendActuatorCommand = async (actuatorType, index, level) => {
     const actuatorKey = `${actuatorType.charAt(0).toUpperCase() + actuatorType.slice(1)}-${index}`
@@ -83,6 +83,15 @@ export default function SystemControlPage() {
     { name: 'Kipas', index: 1, icon: <FiWind className="text-blue-400" /> },
     { name: 'Kipas', index: 2, icon: <FiWind className="text-blue-400" /> },
   ];
+
+  if (user.role !== 'admin') {
+    return (
+      <div className="text-center text-red-400">
+        <h1 className="text-2xl font-semibold">Access Denied</h1>
+        <p className="mt-2">You do not have permission to view this page.</p>
+      </div>
+    );
+  }
 
   return (
     <div>
