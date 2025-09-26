@@ -11,6 +11,7 @@ import Reading from './models/Reading.js';
 import User from './models/User.js';
 import { protect } from './middleware/authMiddleware.js';
 import Failure from './models/Failure.js';
+import Command from './models/Command.js'; 
 
 dotenv.config();
 
@@ -337,34 +338,58 @@ app.post('/api/failures/resolve/:id', protect, async (req, res) => {
   }
 });
 
-app.post('/api/control', protect, (req, res) => {
+app.post('/api/control', protect, async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Forbidden: Admins only' });
   }
 
   const { actuatorType, index, level } = req.body;
-
   if (!actuatorType || !index || !level) {
-    return res.status(400).json({ message: 'actuatorType, index, and level are required.' });
+    return res.status(400).json({ message: 'Required fields are missing.' });
   }
 
   const commandTopic = 'building/room/command';
-  const commandPayload = JSON.stringify({
-    type: actuatorType,
-    index: index,
-    level: level
-  });
+  const commandPayload = JSON.stringify({ type: actuatorType, index, level });
 
-  client.publish(commandTopic, commandPayload, (error) => {
+  client.publish(commandTopic, commandPayload, async (error) => {
     if (error) {
-      console.error('MQTT publish error:', error);
       return res.status(500).json({ message: 'Failed to send command.' });
     }
-    console.log(`Command sent to ${commandTopic}:`, commandPayload);
+
+    try {
+      const newCommand = new Command({
+        user: { id: req.user._id, email: req.user.email },
+        actuatorType,
+        actuatorIndex: index,
+        level,
+      });
+      await newCommand.save();
+      console.log(`Command from ${req.user.email} logged.`);
+    } catch (dbError) {
+      console.error('Failed to log command:', dbError);
+    }
+    
     res.json({ message: `Command '${level}' sent to ${actuatorType} ${index}` });
   });
 });
 
+app.get('/api/failures/all', protect, async (req, res) => {
+  try {
+    const allFailures = await Failure.find({}).sort({ timestamp: -1 });
+    res.json(allFailures);
+  } catch (error) {
+    res.status(500).send('Server Error');
+  }
+});
+
+app.get('/api/commands/all', protect, async (req, res) => {
+  try {
+    const allCommands = await Command.find({}).sort({ timestamp: -1 });
+    res.json(allCommands);
+  } catch (error) {
+    res.status(500).send('Server Error');
+  }
+});
 
 app.get('/', (req, res) => {
   res.send('Backend Server is running.');
