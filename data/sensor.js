@@ -49,6 +49,13 @@ client.on('connect', () => {
   }, 1000);
 });
 
+client.on('message', (topic, payload) => {
+  if (topic === COMMAND_TOPIC) {
+    const command = JSON.parse(payload.toString());
+    console.log(`Command Received: Set ${command.type} ${command.index} to ${command.level}`);
+  }
+});
+
 client.on('error', (error) => {
   console.error('Connection error:', error);
   client.end();

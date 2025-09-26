@@ -322,7 +322,6 @@ app.get('/api/failures/active', protect, async (req, res) => {
   }
 });
 
-// Tandai kegagalan sebagai sudah diselesaikan
 app.post('/api/failures/resolve/:id', protect, async (req, res) => {
   try {
     const failure = await Failure.findById(req.params.id);
@@ -337,6 +336,35 @@ app.post('/api/failures/resolve/:id', protect, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+app.post('/api/control', protect, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden: Admins only' });
+  }
+
+  const { actuatorType, index, level } = req.body;
+
+  if (!actuatorType || !index || !level) {
+    return res.status(400).json({ message: 'actuatorType, index, and level are required.' });
+  }
+
+  const commandTopic = 'building/room/command';
+  const commandPayload = JSON.stringify({
+    type: actuatorType,
+    index: index,
+    level: level
+  });
+
+  client.publish(commandTopic, commandPayload, (error) => {
+    if (error) {
+      console.error('MQTT publish error:', error);
+      return res.status(500).json({ message: 'Failed to send command.' });
+    }
+    console.log(`Command sent to ${commandTopic}:`, commandPayload);
+    res.json({ message: `Command '${level}' sent to ${actuatorType} ${index}` });
+  });
+});
+
 
 app.get('/', (req, res) => {
   res.send('Backend Server is running.');
