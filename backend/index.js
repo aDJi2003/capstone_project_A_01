@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import Reading from './models/Reading.js';
 import User from './models/User.js';
 import { protect } from './middleware/authMiddleware.js';
+import Failure from './models/Failure.js';
 
 dotenv.config();
 
@@ -41,24 +42,44 @@ client.on('connect', () => {
   });
 });
 
-client.on('message', async (topic, payload) => {
-  console.log(`Message received from topic [${topic}]: ${payload.toString()}`);
+const zeroTracker = {
+  suhu: { sensor1: 0, sensor2: 0 },
+  kelembapan: { sensor1: 0, sensor2: 0 },
+  cahaya: { sensor1: 0, sensor2: 0 },
+  gas: { sensor1: 0, sensor2: 0 },
+  arus: { sensor1: 0, sensor2: 0 },
+};
 
+client.on('message', async (topic, payload) => {
   try {
     const data = JSON.parse(payload.toString());
-
-    const newReading = new Reading({
-      suhu: data.suhu,
-      kelembapan: data.kelembapan,
-      cahaya: data.cahaya,
-      gas: data.gas,
-      arus: data.arus,
-    });
-
+    
+    const newReading = new Reading(data);
     await newReading.save();
     console.log('Data saved to MongoDB!');
+
+    for (const sensorType in data) {
+      for (const sensorIndex in data[sensorType]) {
+        if (data[sensorType][sensorIndex] === 0) {
+          zeroTracker[sensorType][sensorIndex]++;
+        } else {
+          zeroTracker[sensorType][sensorIndex] = 0;
+        }
+
+        if (zeroTracker[sensorType][sensorIndex] === 3) {
+          console.log(`FAILURE DETECTED: ${sensorIndex} ${sensorType} is possibly down!`);
+          const message = `Sensor ${sensorType} (${sensorIndex}) reported zero value 3 times in a row.`;
+          
+          const existingFailure = await Failure.findOne({ sensorType, sensorIndex, resolved: false });
+          if (!existingFailure) {
+            await Failure.create({ sensorType, sensorIndex, message });
+          }
+          zeroTracker[sensorType][sensorIndex] = 0;
+        }
+      }
+    }
   } catch (error) {
-    console.error('Failed to parse or save data:', error);
+    console.error('Failed to process message:', error);
   }
 });
 
@@ -288,6 +309,31 @@ app.post('/api/auth/register', async (req, res) => {
 
   } catch (error) {
     console.error(error.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+app.get('/api/failures/active', protect, async (req, res) => {
+  try {
+    const activeFailures = await Failure.find({ resolved: false }).sort({ timestamp: -1 });
+    res.json(activeFailures);
+  } catch (error) {
+    res.status(500).send('Server Error');
+  }
+});
+
+// Tandai kegagalan sebagai sudah diselesaikan
+app.post('/api/failures/resolve/:id', protect, async (req, res) => {
+  try {
+    const failure = await Failure.findById(req.params.id);
+    if (failure) {
+      failure.resolved = true;
+      await failure.save();
+      res.json({ message: 'Failure marked as resolved.' });
+    } else {
+      res.status(404).json({ message: 'Failure not found.' });
+    }
+  } catch (error) {
     res.status(500).send('Server Error');
   }
 });
