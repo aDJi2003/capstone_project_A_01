@@ -3,6 +3,7 @@
 import { DashboardProvider } from '@/context/DashboardContext';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
+import ChatWidget from '@/components/ChatWidget';
 
 export default function Layout({ children }) {
   return (
@@ -15,6 +16,7 @@ export default function Layout({ children }) {
             {children}
           </main>
         </div>
+        <ChatWidget />
       </div>
     </DashboardProvider>
   );
