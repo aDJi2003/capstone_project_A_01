@@ -54,7 +54,7 @@ const zeroTracker = {
 client.on('message', async (topic, payload) => {
   try {
     const data = JSON.parse(payload.toString());
-    
+
     const newReading = new Reading(data);
     await newReading.save();
     console.log('Data saved to MongoDB!');
@@ -68,14 +68,16 @@ client.on('message', async (topic, payload) => {
         }
 
         if (zeroTracker[sensorType][sensorIndex] === 3) {
-          console.log(`FAILURE DETECTED: ${sensorIndex} ${sensorType} is possibly down!`);
-          const message = `Sensor ${sensorType} (${sensorIndex}) reported zero value 3 times in a row.`;
+          console.log(`FAILURE DETECTED: ${sensorType} ${sensorIndex} is possibly down!`);
           
           const existingFailure = await Failure.findOne({ sensorType, sensorIndex, resolved: false });
+
           if (!existingFailure) {
+            const message = `Sensor ${sensorType} (${sensorIndex}) reported zero value 3 times in a row.`;
             await Failure.create({ sensorType, sensorIndex, message });
           }
-          zeroTracker[sensorType][sensorIndex] = 0;
+          
+          zeroTracker[sensorType][sensorIndex] = 0; 
         }
       }
     }

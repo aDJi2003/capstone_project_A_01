@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
 import { useDashboard } from '@/context/DashboardContext';
+import ClientOnly from './ClientOnly';
 import Modal from './Modal';
 import { 
   FiGrid, FiArchive, FiBarChart2, FiUsers, FiSettings, FiLogOut, FiSliders 
@@ -74,27 +75,29 @@ export default function Sidebar() {
           </ul>
         </nav>
         <div className="absolute bottom-0 w-full p-4 border-t border-gray-700">
-          <ul>
-            <li>
-              <Link
-                href="/Dashboard/Settings"
-                className={`flex items-center p-3 my-1 rounded-lg transition-colors
-                  ${pathname === '/Dashboard/Settings' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`}
-              >
-                <FiSettings className="h-5 w-5 mr-3" />
-                <span>Settings</span>
-              </Link>
-            </li>
-            <li>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="w-full flex items-center p-3 my-1 rounded-lg hover:bg-gray-700 text-left cursor-pointer"
-              >
-                <FiLogOut className="h-5 w-5 mr-3" />
-                <span>Log Out</span>
-              </button>
-            </li>
-          </ul>
+          <ClientOnly>
+            <ul>
+              <li>
+                <Link
+                  href="/Dashboard/Settings"
+                  className={`flex items-center p-3 my-1 rounded-lg transition-colors
+                    ${pathname === '/Dashboard/Settings' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`}
+                >
+                  <FiSettings className="h-5 w-5 mr-3" />
+                  <span>Settings</span>
+                </Link>
+              </li>
+              <li>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="w-full flex items-center p-3 my-1 rounded-lg hover:bg-gray-700 text-left cursor-pointer"
+                >
+                  <FiLogOut className="h-5 w-5 mr-3" />
+                  <span>Log Out</span>
+                </button>
+              </li>
+            </ul>
+          </ClientOnly>
         </div>
       </aside>
 

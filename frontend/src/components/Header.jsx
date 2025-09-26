@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FiSearch, FiBell } from "react-icons/fi";
 import ProfileDropdown from "./ProfileDropdown";
 import NotificationDropdown from './NotificationDropdown';
+import ClientOnly from './ClientOnly';
 
 export default function Header() {
   const [notifications, setNotifications] = useState([]);
@@ -46,11 +47,13 @@ export default function Header() {
     <header className="flex h-16 items-center justify-between bg-gray-800 px-6 border-b border-gray-700">
       <div className="relative">
         <FiSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search something..."
-          className="w-96 rounded-lg border border-gray-600 bg-gray-700 py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
+        <ClientOnly>
+          <input
+            type="text"
+            placeholder="Search something..."
+            className="w-96 rounded-lg border border-gray-600 bg-gray-700 py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </ClientOnly>
       </div>
       <div className="flex items-center space-x-4">
         <div className="relative" ref={notificationRef}>
