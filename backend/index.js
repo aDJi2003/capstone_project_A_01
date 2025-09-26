@@ -393,6 +393,42 @@ app.get('/api/commands/all', protect, async (req, res) => {
   }
 });
 
+app.get('/api/search', protect, async (req, res) => {
+  const { q } = req.query;
+
+  if (!q) {
+    return res.status(400).json({ message: 'Search query is required.' });
+  }
+
+  try {
+    const queryRegex = new RegExp(q, 'i');
+
+    const [users, failures, commands] = await Promise.all([
+      User.find({
+        $or: [
+          { name: queryRegex },
+          { email: queryRegex }
+        ]
+      }).select('-password').limit(5),
+
+      Failure.find({ message: queryRegex }).limit(5),
+
+      Command.find({
+        $or: [
+          { actuatorType: queryRegex },
+          { level: queryRegex },
+          { 'user.email': queryRegex }
+        ]
+      }).limit(5)
+    ]);
+
+    res.json({ users, failures, commands });
+
+  } catch (error) {
+    res.status(500).send('Server Error');
+  }
+});
+
 app.get('/', (req, res) => {
   res.send('Backend Server is running.');
 });
