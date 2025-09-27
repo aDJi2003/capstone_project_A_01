@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useDashboard } from '@/context/DashboardContext';
 import SensorChart from '@/components/SensorChart';
 import StatCard from '@/components/StatCard';
-import { FiChevronDown } from 'react-icons/fi';
+import { FiChevronDown, FiPause, FiPlay } from 'react-icons/fi';
 
 const API_URL = 'http://localhost:5000/api/latest-data';
 
@@ -19,7 +18,6 @@ const thresholds = {
 const chartOptions = Object.keys(thresholds);
 
 export default function DashboardPage() {
-  const { activeMenu } = useDashboard();
   
   const [chartData, setChartData] = useState({});
   const [stats, setStats] = useState({});
@@ -27,6 +25,9 @@ export default function DashboardPage() {
   const [selectedChart, setSelectedChart] = useState('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const [isRunning, setIsRunning] = useState(true);
+  const intervalRef = useRef(null);
 
   const calculateStats = (dataArray = [], threshold) => {
     if (dataArray.length === 0) return { min: 0, max: 0, avg: 0, exceedCount: 0 };
@@ -61,16 +62,23 @@ export default function DashboardPage() {
     const fetchData = async () => {
       try {
         const response = await fetch(API_URL);
+        if(!response.ok) throw new Error("Network response was not ok");
         const data = await response.json();
         formatChartData(data);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
-    fetchData();
-    const intervalId = setInterval(fetchData, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
+    
+    if (isRunning) {
+      fetchData();
+      intervalRef.current = setInterval(fetchData, 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+
+    return () => clearInterval(intervalRef.current);
+  }, [isRunning]);
 
   useEffect(() => {
     if (selectedChart !== 'all' && chartData[selectedChart]) {
@@ -94,17 +102,6 @@ export default function DashboardPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
-
-  if (activeMenu !== 'Dashboard') {
-    return ( 
-      <div>
-        <h1 className="text-2xl font-semibold text-white">{activeMenu}</h1>
-        <p className="mt-2 text-gray-300">
-          This is the main content area for the <span className="font-bold">{activeMenu}</span> page.
-        </p>
-      </div>
-    );
-  }
   
   const getUnit = (chartName) => {
     const units = { 'Suhu': '°C', 'Kelembapan': '%', 'Intensitas Cahaya': 'lux', 'Kualitas Udara': 'ppm', 'Penggunaan Arus': 'A' };
@@ -114,19 +111,28 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-white">Dashboard Overview</h1>
+        <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-semibold text-white">Dashboard Overview</h1>
+        </div>
         
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative flex gap-4" ref={dropdownRef}>
+          <button
+              onClick={() => setIsRunning(!isRunning)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              {isRunning ? <FiPause size={16} /> : <FiPlay size={16} />}
+              <span className="text-sm font-medium">{isRunning ? 'Pause' : 'Resume'}</span>
+            </button>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center justify-between w-56 px-4 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex items-center justify-between w-56 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
           >
             <span>View: {selectedChart === 'all' ? 'All Charts' : selectedChart}</span>
             <FiChevronDown className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
           
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-gray-700 rounded-lg shadow-xl z-10 cursor-pointer text-white">
+            <div className="absolute right-0 mt-11 w-56 bg-gray-700 rounded-lg shadow-xl z-10 text-white">
               <ul>
                 <li onClick={() => { setSelectedChart('all'); setIsDropdownOpen(false); }} className="px-4 py-2 hover:bg-gray-600 cursor-pointer rounded-t-lg">All Charts</li>
                 {chartOptions.map(option => (
