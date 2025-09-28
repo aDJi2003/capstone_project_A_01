@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FiEye, FiEyeOff } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiLoader } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem("rememberMeDetails");
@@ -34,11 +35,14 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     
     if (!email || !password) {
       toast.warn("Please enter both email and password.");
       return;
     }
+
+    setIsLoading(true);
 
     try {
       const response = await fetch('http://localhost:5000/api/auth/login', {
@@ -78,6 +82,8 @@ export default function LoginPage() {
     } catch (error) {
       console.error('Login error:', error);
       toast.error('An error occurred while trying to log in. Please try again.');
+    } finally {
+      setTimeout(() => setIsLoading(false), 2000);
     }
   };
 
@@ -208,9 +214,14 @@ export default function LoginPage() {
             <div>
               <button
                 type="submit"
-                className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 cursor-pointer"
+                disabled={isLoading}
+                className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:bg-blue-800 disabled:cursor-not-allowed cursor-pointer"
               >
-                Sign in
+                {isLoading ? (
+                  <FiLoader className="animate-spin" size={20} />
+                ) : (
+                  'Sign in'
+                )}
               </button>
             </div>
           </form>

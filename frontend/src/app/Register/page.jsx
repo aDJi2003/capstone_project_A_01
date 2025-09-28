@@ -3,17 +3,18 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Impor useRouter
-import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
+import { FiEye, FiEyeOff, FiLoader } from 'react-icons/fi';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function RegisterPage() {
-  const router = useRouter(); // Inisialisasi router
+  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,6 +22,8 @@ export default function RegisterPage() {
     if (password.length < 8) {
       return toast.warn('Password must be at least 8 characters long!');
     }
+
+    setIsLoading(true);
 
     try {
       const response = await fetch('http://localhost:5000/api/auth/register', {
@@ -39,12 +42,16 @@ export default function RegisterPage() {
         toast.success(data.message);
         setTimeout(() => {
           router.push('/');
-        }, 2000);
+        }, 3000);
       }
 
     } catch (error) {
       console.error('Registration error:', error);
       toast.error('An error occurred during registration.');
+    }
+
+    finally {
+      setIsLoading(false);
     }
   };
 
@@ -118,8 +125,16 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <button type="submit" className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none cursor-pointer">
-                Get started
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none disabled:bg-blue-800 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isLoading ? (
+                  <FiLoader className="animate-spin" size={20} />
+                ) : (
+                  'Get started'
+                )}
               </button>
             </div>
           </form>
