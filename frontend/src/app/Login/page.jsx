@@ -7,6 +7,7 @@ import { FiEye, FiEyeOff, FiLoader } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
+import ClientOnly from "@/components/ClientOnly";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isLoading) return;
-    
+
     if (!email || !password) {
       toast.warn("Please enter both email and password.");
       return;
@@ -45,10 +46,10 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
@@ -56,12 +57,14 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.message || 'Login failed. Please check your credentials.');
+        toast.error(
+          data.message || "Login failed. Please check your credentials."
+        );
         return;
       }
-      
-      toast.success('Login Success! Redirecting to dashboard...');
-      localStorage.setItem('token', data.token);
+
+      toast.success("Login Success! Redirecting to dashboard...");
+      localStorage.setItem("token", data.token);
 
       if (rememberMe) {
         const expiryTime = new Date().getTime() + 60 * 60 * 1000;
@@ -70,18 +73,22 @@ export default function LoginPage() {
           password: password,
           expiry: expiryTime,
         };
-        localStorage.setItem('rememberMeDetails', JSON.stringify(rememberMeDetails));
+        localStorage.setItem(
+          "rememberMeDetails",
+          JSON.stringify(rememberMeDetails)
+        );
       } else {
-        localStorage.removeItem('rememberMeDetails');
+        localStorage.removeItem("rememberMeDetails");
       }
 
       setTimeout(() => {
-        router.push('/Dashboard');
+        router.push("/Dashboard");
       }, 2000);
-
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error('An error occurred while trying to log in. Please try again.');
+      console.error("Login error:", error);
+      toast.error(
+        "An error occurred while trying to log in. Please try again."
+      );
     } finally {
       setTimeout(() => setIsLoading(false), 2000);
     }
@@ -138,17 +145,19 @@ export default function LoginPage() {
               >
                 Email
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="Enter your email"
-              />
+              <ClientOnly>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                  placeholder="Enter your email"
+                />
+              </ClientOnly>
             </div>
 
             <div>
@@ -159,6 +168,7 @@ export default function LoginPage() {
                 Password
               </label>
               <div className="relative">
+                <ClientOnly>
                 <input
                   id="password"
                   name="password"
@@ -170,6 +180,7 @@ export default function LoginPage() {
                   className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
                   placeholder="Create a password"
                 />
+                </ClientOnly>
                 <div
                   className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3"
                   onClick={() => setShowPassword(!showPassword)}
@@ -220,7 +231,7 @@ export default function LoginPage() {
                 {isLoading ? (
                   <FiLoader className="animate-spin" size={20} />
                 ) : (
-                  'Sign in'
+                  "Sign in"
                 )}
               </button>
             </div>

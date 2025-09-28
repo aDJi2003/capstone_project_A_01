@@ -5,6 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useRouter } from 'next/navigation';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import ClientOnly from '@/components/ClientOnly';
 
 export default function ResetPasswordPage({ params }) {
   const { token } = params;
@@ -50,14 +51,16 @@ export default function ResetPasswordPage({ params }) {
           <div>
             <label htmlFor="password">New Password</label>
             <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white"
-              />
+              <ClientOnly>
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white"
+                />
+              </ClientOnly>
               <div className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <FiEye className="h-5 w-5 text-gray-400" /> : <FiEyeOff className="h-5 w-5 text-gray-400" />}
               </div>
@@ -68,14 +71,16 @@ export default function ResetPasswordPage({ params }) {
           <div>
             <label htmlFor="confirmPassword">Confirm New Password</label>
             <div className="relative">
-              <input
-                id="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white"
-              />
+              <ClientOnly>
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white"
+                />
+              </ClientOnly>
               <div className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                 {showConfirmPassword ? <FiEye className="h-5 w-5 text-gray-400" /> : <FiEyeOff className="h-5 w-5 text-gray-400" />}
               </div>

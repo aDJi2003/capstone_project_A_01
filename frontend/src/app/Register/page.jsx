@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { FiEye, FiEyeOff, FiLoader } from 'react-icons/fi';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ClientOnly from '@/components/ClientOnly';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -85,35 +86,41 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300">Name*</label>
-              <input
-                id="name" name="name" type="text" autoComplete="name" required
-                value={name} onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="Enter your name"
-              />
+              <ClientOnly>
+                <input
+                  id="name" name="name" type="text" autoComplete="name" required
+                  value={name} onChange={(e) => setName(e.target.value)}
+                  className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                  placeholder="Enter your name"
+                />
+              </ClientOnly>
             </div>
             
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300">Email*</label>
-              <input
-                id="email" name="email" type="email" autoComplete="email" required
-                value={email} onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                placeholder="Enter your email"
-              />
+              <ClientOnly>
+                <input
+                  id="email" name="email" type="email" autoComplete="email" required
+                  value={email} onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                  placeholder="Enter your email"
+                />
+              </ClientOnly>
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300">Password*</label>
               <div className="relative">
-                <input
-                  id="password" name="password" required
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  value={password} onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                  placeholder="Create a password"
+                <ClientOnly>
+                  <input
+                    id="password" name="password" required
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    value={password} onChange={(e) => setPassword(e.target.value)}
+                    className="mt-1 block w-full appearance-none rounded-md border border-gray-600 bg-gray-700 px-3 py-2 pr-10 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                    placeholder="Create a password"
                 />
+                </ClientOnly>
                 <div 
                   className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3"
                   onClick={() => setShowPassword(!showPassword)}
