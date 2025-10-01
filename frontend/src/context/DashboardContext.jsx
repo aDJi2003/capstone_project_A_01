@@ -14,6 +14,7 @@ export function DashboardProvider({ children }) {
   const [activeMenu, setActiveMenu] = useState('Dashboard');
   const [user, setUser] = useState(null);
   const [actuatorStates, setActuatorStates] = useState(initialActuatorStates);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -44,7 +45,7 @@ export function DashboardProvider({ children }) {
 
   return (
     <DashboardContext.Provider 
-      value={{ activeMenu, setActiveMenu, user, actuatorStates, updateActuatorState }}
+      value={{ activeMenu, setActiveMenu, user, actuatorStates, updateActuatorState, isSidebarOpen, setIsSidebarOpen }}
     >
       {children}
     </DashboardContext.Provider>
