@@ -6,6 +6,7 @@ import { FiSearch, FiBell, FiMenu } from "react-icons/fi";
 import ProfileDropdown from "./ProfileDropdown";
 import NotificationDropdown from './NotificationDropdown';
 import SearchResultsDropdown from './SearchResultsDropdown';
+import ClientOnly from './ClientOnly';
 
 export default function Header() {
   const { user, setIsSidebarOpen } = useDashboard();
@@ -103,15 +104,17 @@ export default function Header() {
           <FiMenu size={24} />
         </button>
 
-        <div className="relative block" ref={searchRef}>
+        <div className="relative" ref={searchRef}>
           <FiSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search something..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full md:w-96 rounded-lg border border-gray-600 bg-gray-700 py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+          <ClientOnly>
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-40 sm:w-64 md:w-96 rounded-lg border border-gray-600 bg-gray-700 py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </ClientOnly>
           {searchTerm && (
             <SearchResultsDropdown 
               results={searchResults} 
@@ -124,8 +127,8 @@ export default function Header() {
       </div>
 
       <div className="flex items-center space-x-4">
-        <div className="relative" ref={notificationRef}>
-          <button onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)} className="relative">
+        <div className="relative mt-1" ref={notificationRef}>
+          <button onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)} className="relative cursor-pointer">
             <FiBell className="h-6 w-6 text-gray-400 hover:text-white" />
             {notifications.length > 0 && (
               <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">

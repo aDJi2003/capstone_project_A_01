@@ -37,7 +37,7 @@ export default function ProfileDropdown() {
 
   return (
     <>
-      <div className="relative -mt-1" ref={dropdownRef}>
+      <div className="relative" ref={dropdownRef}>
         <button 
           onClick={() => setIsOpen(!isOpen)} 
           className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
