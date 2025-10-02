@@ -121,10 +121,10 @@ export default function HistoryPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <h1 className="text-2xl font-semibold text-white">History Overview</h1>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row w-full md:w-auto gap-4">
           <Dropdown
             label="Sensor"
             options={Object.keys(sensorOptions)}
@@ -140,7 +140,7 @@ export default function HistoryPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-wait cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-wait"
           >
             <FiRefreshCw className={loading ? "animate-spin" : ""} />
             <span>{loading ? "Refreshing..." : "Refresh"}</span>

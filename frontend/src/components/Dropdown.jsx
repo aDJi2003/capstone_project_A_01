@@ -26,14 +26,14 @@ export default function Dropdown({ label, options, selectedValue, onSelect }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-64 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+        className="flex items-center justify-between w-full sm:w-64 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
       >
         <span>{label}: {selectedValue}</span>
         <FiChevronDown className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-gray-700 rounded-lg shadow-xl z-10 text-white">
+        <div className="absolute right-0 mt-2 w-full sm:w-64 bg-gray-700 rounded-lg shadow-xl z-10 text-white">
           <ul>
             {options.map(option => (
               <li
