@@ -27,7 +27,7 @@ const ActuatorCard = ({ icon, name, index, onCommand, activeLevel }) => {
               key={level}
               onClick={() => handleCommand(level)}
               disabled={isSelected}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer
+              className={`flex-1 py-2 font-semibold rounded-lg transition-colors cursor-pointer sm:text-sm text-xs
                 ${isSelected 
                   ? 'bg-blue-600 text-white' 
                   : 'bg-gray-600 hover:bg-gray-500 text-gray-300'

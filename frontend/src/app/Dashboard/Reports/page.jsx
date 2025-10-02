@@ -43,7 +43,7 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
-      fetchReports();
+    fetchReports();
   }, [activeMenu, fetchReports]);
 
   return (
@@ -53,7 +53,7 @@ export default function ReportsPage() {
         <button
           onClick={fetchReports}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-wait cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-wait"
         >
           <FiRefreshCw className={loading ? 'animate-spin' : ''}/>
           <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
@@ -66,23 +66,23 @@ export default function ReportsPage() {
         <div className="space-y-8">
           <div>
             <h2 className="text-xl font-semibold text-white mb-4">Sensor Failure History</h2>
-            <div className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden">
+            <div className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Sensor</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Message</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Status</th>
+                    <th className="px-4 py-3 sm:px-6 text-left text-xs font-medium text-gray-300 uppercase">Sensor</th>
+                    <th className="px-4 py-3 sm:px-6 text-left text-xs font-medium text-gray-300 uppercase">Message</th>
+                    <th className="px-4 py-3 sm:px-6 text-left text-xs font-medium text-gray-300 uppercase">Date</th>
+                    <th className="px-4 py-3 sm:px-6 text-left text-xs font-medium text-gray-300 uppercase">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
                   {failures.map(failure => (
                     <tr key={failure._id}>
-                      <td className="px-6 py-4 text-sm text-white capitalize">{failure.sensorType} {failure.sensorIndex}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{failure.message}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{new Date(failure.timestamp).toLocaleString()}</td>
-                      <td className="px-6 py-4 text-sm">
+                      <td className="px-4 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-white capitalize">{failure.sensorType} {failure.sensorIndex}</td>
+                      <td className="px-4 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-gray-300">{failure.message}</td>
+                      <td className="px-4 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-gray-300">{new Date(failure.timestamp).toLocaleString()}</td>
+                      <td className="px-4 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${failure.resolved ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>
                           {failure.resolved ? 'Resolved' : 'Active'}
                         </span>
@@ -96,23 +96,23 @@ export default function ReportsPage() {
 
           <div>
             <h2 className="text-xl font-semibold text-white mb-4">Actuator Command History</h2>
-            <div className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden">
+            <div className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Actuator</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Command</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Date</th>
+                    <th className="px-4 py-3 sm:px-6 text-left text-xs font-medium text-gray-300 uppercase">User</th>
+                    <th className="px-4 py-3 sm:px-6 text-left text-xs font-medium text-gray-300 uppercase">Actuator</th>
+                    <th className="px-4 py-3 sm:px-6 text-left text-xs font-medium text-gray-300 uppercase">Command</th>
+                    <th className="px-4 py-3 sm:px-6 text-left text-xs font-medium text-gray-300 uppercase">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
                   {commands.map(command => (
                     <tr key={command._id}>
-                      <td className="px-6 py-4 text-sm text-gray-300">{command.user.email}</td>
-                      <td className="px-6 py-4 text-sm text-white capitalize">{command.actuatorType} #{command.actuatorIndex}</td>
-                      <td className="px-6 py-4 text-sm text-white capitalize">{command.level}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{new Date(command.timestamp).toLocaleString()}</td>
+                      <td className="px-4 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-gray-300">{command.user.email}</td>
+                      <td className="px-4 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-white capitalize">{command.actuatorType} #{command.actuatorIndex}</td>
+                      <td className="px-4 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-white capitalize">{command.level}</td>
+                      <td className="px-4 py-4 sm:px-6 whitespace-nowrap text-xs sm:text-sm text-gray-300">{new Date(command.timestamp).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
