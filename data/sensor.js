@@ -1,7 +1,10 @@
 import mqtt from 'mqtt';
 
+const OUTPUT_FORMAT = 'CSV';
+
 const BROKER_URL = 'mqtt://localhost:1883';
 const TOPIC = 'building/room/data';
+const COMMAND_TOPIC = 'building/room/command';
 
 const client = mqtt.connect(BROKER_URL, {
   clientId: `mqtt_sensor_simulator_${Math.random().toString(16).slice(3)}`,
@@ -13,6 +16,10 @@ const getRandomValue = (min, max, decimalPlaces = 2) => {
 
 client.on('connect', () => {
   console.log('Connected to MQTT Broker!');
+  client.subscribe(COMMAND_TOPIC, (err) => {
+    if (!err) console.log(`Subscribed to command topic: [${COMMAND_TOPIC}]`);
+  });
+
   setInterval(() => {
     const data = {
       suhu: {
@@ -37,13 +44,22 @@ client.on('connect', () => {
       }
     };
 
-    const payload = JSON.stringify(data);
+    let payload;
+    
+    if (OUTPUT_FORMAT === 'CSV') {
+      const orderedKeys = ['suhu', 'kelembapan', 'cahaya', 'gas', 'arus'];
+      const values = orderedKeys.flatMap(key => [data[key].sensor1, data[key].sensor2]);
+      payload = values.join(',');
+      console.log(`Published CSV to topic [${TOPIC}]:`, payload);
+
+    } else {
+      payload = JSON.stringify(data);
+      console.log(`Published JSON to topic [${TOPIC}]:`, payload);
+    }
 
     client.publish(TOPIC, payload, { qos: 1 }, (error) => {
       if (error) {
         console.error('Publish error:', error);
-      } else {
-        console.log(`Published to topic [${TOPIC}]:`, payload);
       }
     });
   }, 1000);
@@ -52,7 +68,7 @@ client.on('connect', () => {
 client.on('message', (topic, payload) => {
   if (topic === COMMAND_TOPIC) {
     const command = JSON.parse(payload.toString());
-    console.log(`Command Received: Set ${command.type} ${command.index} to ${command.level}`);
+    console.log(`🕹️ Command Received: Set ${command.type} ${command.index} to ${command.level}`);
   }
 });
 

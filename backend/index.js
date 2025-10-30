@@ -1,17 +1,19 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import mqtt from 'mqtt';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
+import express from "express";
+import mongoose from "mongoose";
+import mqtt from "mqtt";
+import dotenv from "dotenv";
+import cors from "cors";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import csv from "csv-parser";
+import { Readable } from "stream";
 
-import Reading from './models/Reading.js';
-import User from './models/User.js';
-import { protect } from './middleware/authMiddleware.js';
-import Failure from './models/Failure.js';
-import Command from './models/Command.js'; 
+import Reading from "./models/Reading.js";
+import User from "./models/User.js";
+import { protect } from "./middleware/authMiddleware.js";
+import Failure from "./models/Failure.js";
+import Command from "./models/Command.js";
 
 dotenv.config();
 
@@ -21,24 +23,25 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected to MongoDB!'))
-  .catch(err => console.error('DB Connection Error:', err));
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("Connected to MongoDB!"))
+  .catch((err) => console.error("DB Connection Error:", err));
 
-const BROKER_URL = 'mqtt://localhost:1883';
-const TOPIC = 'building/room/data';
+const BROKER_URL = "mqtt://localhost:1883";
+const TOPIC = "building/room/data";
 
 const client = mqtt.connect(BROKER_URL, {
   clientId: `mqtt_backend_subscriber_${Math.random().toString(16).slice(3)}`,
 });
 
-client.on('connect', () => {
-  console.log('MQTT Backend connected to Broker!');
+client.on("connect", () => {
+  console.log("MQTT Backend connected to Broker!");
   client.subscribe([TOPIC], (err) => {
     if (!err) {
       console.log(`Subscribed to topic: [${TOPIC}]`);
     } else {
-      console.error('Subscription error:', err);
+      console.error("Subscription error:", err);
     }
   });
 });
@@ -51,13 +54,13 @@ const zeroTracker = {
   arus: { sensor1: 0, sensor2: 0 },
 };
 
-client.on('message', async (topic, payload) => {
-  try {
-    const data = JSON.parse(payload.toString());
+client.on("message", async (topic, payload) => {
+  const messageString = payload.toString();
 
+  const processData = async (data) => {
     const newReading = new Reading(data);
     await newReading.save();
-    console.log('Data saved to MongoDB!');
+    console.log("Data saved to MongoDB!");
 
     for (const sensorType in data) {
       for (const sensorIndex in data[sensorType]) {
@@ -68,53 +71,84 @@ client.on('message', async (topic, payload) => {
         }
 
         if (zeroTracker[sensorType][sensorIndex] === 3) {
-          console.log(`FAILURE DETECTED: ${sensorType} ${sensorIndex} is possibly down!`);
-          
-          const existingFailure = await Failure.findOne({ sensorType, sensorIndex, resolved: false });
-
+          console.log(`FAILURE DETECTED: ${sensorType} ${sensorIndex}`);
+          const existingFailure = await Failure.findOne({
+            sensorType,
+            sensorIndex,
+            resolved: false,
+          });
           if (!existingFailure) {
             const message = `Sensor ${sensorType} (${sensorIndex}) reported zero value 3 times in a row.`;
             await Failure.create({ sensorType, sensorIndex, message });
           }
-          
-          zeroTracker[sensorType][sensorIndex] = 0; 
+          zeroTracker[sensorType][sensorIndex] = 0;
         }
       }
     }
+  };
+
+  try {
+    const jsonData = JSON.parse(messageString);
+    console.log("Processing message as JSON...");
+    await processData(jsonData);
   } catch (error) {
-    console.error('Failed to process message:', error);
+    console.log("Not valid JSON, processing as CSV...");
+    const stream = Readable.from(messageString);
+    stream.pipe(csv({ headers: false })).on("data", async (row) => {
+      try {
+        const jsonData = {
+          suhu: {
+            sensor1: parseFloat(row["0"]),
+            sensor2: parseFloat(row["1"]),
+          },
+          kelembapan: {
+            sensor1: parseFloat(row["2"]),
+            sensor2: parseFloat(row["3"]),
+          },
+          cahaya: { sensor1: parseInt(row["4"]), sensor2: parseInt(row["5"]) },
+          gas: { sensor1: parseInt(row["6"]), sensor2: parseInt(row["7"]) },
+          arus: {
+            sensor1: parseFloat(row["8"]),
+            sensor2: parseFloat(row["9"]),
+          },
+        };
+        await processData(jsonData);
+      } catch (processError) {
+        console.error("Failed to process CSV row:", processError);
+      }
+    });
   }
 });
 
-client.on('error', (err) => {
-  console.error('MQTT Connection Error:', err);
+client.on("error", (err) => {
+  console.error("MQTT Connection Error:", err);
 });
 
-app.get('/api/latest-data', async (req, res) => {
+app.get("/api/latest-data", async (req, res) => {
   try {
     const latestReadings = await Reading.find()
       .sort({ timestamp: -1 })
       .limit(20);
-    
+
     res.json(latestReadings.reverse());
   } catch (error) {
-    console.error('Failed to fetch latest data:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error("Failed to fetch latest data:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const payload = {
@@ -127,59 +161,64 @@ app.post('/api/auth/login', async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '1h' },
+      { expiresIn: "1h" },
       (err, token) => {
         if (err) throw err;
         res.json({ token });
       }
     );
-
   } catch (error) {
     console.error(error.message);
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post("/api/auth/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: 'No user found with that email address.' });
+      return res
+        .status(404)
+        .json({ message: "No user found with that email address." });
     }
 
-    const token = crypto.randomBytes(20).toString('hex');
+    const token = crypto.randomBytes(20).toString("hex");
     user.resetPasswordToken = token;
     user.resetPasswordExpires = Date.now() + 3600000;
 
     await user.save();
 
     const resetLink = `http://localhost:3000/reset-password/${token}`;
-    
-    console.log('--------------------');
-    console.log('PASSWORD RESET LINK (COPY TO BROWSER):');
+
+    console.log("--------------------");
+    console.log("PASSWORD RESET LINK (COPY TO BROWSER):");
     console.log(resetLink);
-    console.log('--------------------');
+    console.log("--------------------");
 
-    res.json({ message: 'A password reset link has been generated. Check the backend console.' });
-
+    res.json({
+      message:
+        "A password reset link has been generated. Check the backend console.",
+    });
   } catch (error) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.post('/api/auth/reset-password/:token', async (req, res) => {
+app.post("/api/auth/reset-password/:token", async (req, res) => {
   try {
     const { password } = req.body;
-    
+
     const user = await User.findOne({
       resetPasswordToken: req.params.token,
       resetPasswordExpires: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Password reset token is invalid or has expired.' });
+      return res
+        .status(400)
+        .json({ message: "Password reset token is invalid or has expired." });
     }
 
     user.password = await bcrypt.hash(password, 10);
@@ -188,18 +227,17 @@ app.post('/api/auth/reset-password/:token', async (req, res) => {
 
     await user.save();
 
-    res.json({ message: 'Password has been updated successfully.' });
-
+    res.json({ message: "Password has been updated successfully." });
   } catch (error) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.get('/api/users/me', protect, (req, res) => {
+app.get("/api/users/me", protect, (req, res) => {
   res.json(req.user);
 });
 
-app.post('/api/users/change-password', protect, async (req, res) => {
+app.post("/api/users/change-password", protect, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   try {
@@ -207,23 +245,24 @@ app.post('/api/users/change-password', protect, async (req, res) => {
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Incorrect current password.' });
+      return res.status(400).json({ message: "Incorrect current password." });
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
-    res.json({ message: 'Password updated successfully.' });
-
+    res.json({ message: "Password updated successfully." });
   } catch (error) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.get('/api/history/stats', protect, async (req, res) => {
+app.get("/api/history/stats", protect, async (req, res) => {
   const { startTime, endTime, sensorType } = req.query;
   if (!startTime || !endTime || !sensorType) {
-    return res.status(400).json({ message: 'startTime, endTime, and sensorType are required' });
+    return res
+      .status(400)
+      .json({ message: "startTime, endTime, and sensorType are required" });
   }
 
   const field1 = `$${sensorType}.sensor1`;
@@ -231,26 +270,32 @@ app.get('/api/history/stats', protect, async (req, res) => {
 
   try {
     const stats = await Reading.aggregate([
-      { $match: { timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) } } },
+      {
+        $match: {
+          timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) },
+        },
+      },
       {
         $group: {
           _id: null,
           maxValue: { $max: { $max: [field1, field2] } },
           minValue: { $min: { $min: [field1, field2] } },
           avgValue: { $avg: { $avg: [field1, field2] } },
-        }
-      }
+        },
+      },
     ]);
     res.json(stats[0] || {});
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
-app.get('/api/history/chart', protect, async (req, res) => {
+app.get("/api/history/chart", protect, async (req, res) => {
   const { startTime, endTime, sensorType } = req.query;
   if (!startTime || !endTime || !sensorType) {
-    return res.status(400).json({ message: 'startTime, endTime, and sensorType are required' });
+    return res
+      .status(400)
+      .json({ message: "startTime, endTime, and sensorType are required" });
   }
 
   const outputFields = {
@@ -260,41 +305,47 @@ app.get('/api/history/chart', protect, async (req, res) => {
 
   try {
     const chartData = await Reading.aggregate([
-      { $match: { timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) } } },
+      {
+        $match: {
+          timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) },
+        },
+      },
       {
         $bucketAuto: {
           groupBy: "$timestamp",
           buckets: 20,
-          output: outputFields
-        }
-      }
+          output: outputFields,
+        },
+      },
     ]);
     res.json(chartData);
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
-app.get('/api/users', protect, async (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Forbidden: Admins only' });
+app.get("/api/users", protect, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden: Admins only" });
   }
 
   try {
-    const users = await User.find({}).select('-password');
+    const users = await User.find({}).select("-password");
     res.json(users);
   } catch (error) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.post('/api/auth/register', async (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ message: 'User with this email already exists.' });
+      return res
+        .status(400)
+        .json({ message: "User with this email already exists." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -303,59 +354,62 @@ app.post('/api/auth/register', async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: 'user',
+      role: "user",
     });
 
     await user.save();
 
-    res.status(201).json({ message: 'User registered successfully. Please log in.' });
-
+    res
+      .status(201)
+      .json({ message: "User registered successfully. Please log in." });
   } catch (error) {
     console.error(error.message);
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.get('/api/failures/active', protect, async (req, res) => {
+app.get("/api/failures/active", protect, async (req, res) => {
   try {
-    const activeFailures = await Failure.find({ resolved: false }).sort({ timestamp: -1 });
+    const activeFailures = await Failure.find({ resolved: false }).sort({
+      timestamp: -1,
+    });
     res.json(activeFailures);
   } catch (error) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.post('/api/failures/resolve/:id', protect, async (req, res) => {
+app.post("/api/failures/resolve/:id", protect, async (req, res) => {
   try {
     const failure = await Failure.findById(req.params.id);
     if (failure) {
       failure.resolved = true;
       await failure.save();
-      res.json({ message: 'Failure marked as resolved.' });
+      res.json({ message: "Failure marked as resolved." });
     } else {
-      res.status(404).json({ message: 'Failure not found.' });
+      res.status(404).json({ message: "Failure not found." });
     }
   } catch (error) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.post('/api/control', protect, async (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Forbidden: Admins only' });
+app.post("/api/control", protect, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden: Admins only" });
   }
 
   const { actuatorType, index, level } = req.body;
   if (!actuatorType || !index || !level) {
-    return res.status(400).json({ message: 'Required fields are missing.' });
+    return res.status(400).json({ message: "Required fields are missing." });
   }
 
-  const commandTopic = 'building/room/command';
+  const commandTopic = "building/room/command";
   const commandPayload = JSON.stringify({ type: actuatorType, index, level });
 
   client.publish(commandTopic, commandPayload, async (error) => {
     if (error) {
-      return res.status(500).json({ message: 'Failed to send command.' });
+      return res.status(500).json({ message: "Failed to send command." });
     }
 
     try {
@@ -368,48 +422,49 @@ app.post('/api/control', protect, async (req, res) => {
       await newCommand.save();
       console.log(`Command from ${req.user.email} logged.`);
     } catch (dbError) {
-      console.error('Failed to log command:', dbError);
+      console.error("Failed to log command:", dbError);
     }
-    
-    res.json({ message: `Command '${level}' sent to ${actuatorType} ${index}` });
+
+    res.json({
+      message: `Command '${level}' sent to ${actuatorType} ${index}`,
+    });
   });
 });
 
-app.get('/api/failures/all', protect, async (req, res) => {
+app.get("/api/failures/all", protect, async (req, res) => {
   try {
     const allFailures = await Failure.find({}).sort({ timestamp: -1 });
     res.json(allFailures);
   } catch (error) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.get('/api/commands/all', protect, async (req, res) => {
+app.get("/api/commands/all", protect, async (req, res) => {
   try {
     const allCommands = await Command.find({}).sort({ timestamp: -1 });
     res.json(allCommands);
   } catch (error) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.get('/api/search', protect, async (req, res) => {
+app.get("/api/search", protect, async (req, res) => {
   const { q } = req.query;
 
   if (!q) {
-    return res.status(400).json({ message: 'Search query is required.' });
+    return res.status(400).json({ message: "Search query is required." });
   }
 
   try {
-    const queryRegex = new RegExp(q, 'i');
+    const queryRegex = new RegExp(q, "i");
 
     const [users, failures, commands] = await Promise.all([
       User.find({
-        $or: [
-          { name: queryRegex },
-          { email: queryRegex }
-        ]
-      }).select('-password').limit(5),
+        $or: [{ name: queryRegex }, { email: queryRegex }],
+      })
+        .select("-password")
+        .limit(5),
 
       Failure.find({ message: queryRegex }).limit(5),
 
@@ -417,20 +472,19 @@ app.get('/api/search', protect, async (req, res) => {
         $or: [
           { actuatorType: queryRegex },
           { level: queryRegex },
-          { 'user.email': queryRegex }
-        ]
-      }).limit(5)
+          { "user.email": queryRegex },
+        ],
+      }).limit(5),
     ]);
 
     res.json({ users, failures, commands });
-
   } catch (error) {
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 
-app.get('/', (req, res) => {
-  res.send('Backend Server is running.');
+app.get("/", (req, res) => {
+  res.send("Backend Server is running.");
 });
 
 app.listen(PORT, () => {
