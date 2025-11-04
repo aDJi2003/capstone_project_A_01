@@ -30,6 +30,9 @@ mongoose
 
 const BROKER_URL = "mqtt://localhost:1883";
 const TOPIC = "building/room/data";
+// const BROKER_URL = 'mqtt://test.mosquitto.org:1883';
+// const TOPIC = 'sensor/data/system';
+const COMMAND_TOPIC = 'building/room/command';
 
 const client = mqtt.connect(BROKER_URL, {
   clientId: `mqtt_backend_subscriber_${Math.random().toString(16).slice(3)}`,
@@ -46,72 +49,233 @@ client.on("connect", () => {
   });
 });
 
+// const zeroTracker = {
+//   suhu: { sensor1: 0, sensor2: 0 },
+//   kelembapan: { sensor1: 0, sensor2: 0 },
+//   cahaya: { sensor1: 0, sensor2: 0 },
+//   gas: { sensor1: 0, sensor2: 0 },
+//   arus: { sensor1: 0, sensor2: 0 },
+// };
+
+// const zeroTracker = {
+//   suhu: { sensor1: 0 },
+//   kelembapan: { sensor1: 0 },
+//   cahaya: { sensor1: 0, sensor2: 0 },
+//   gas: { sensor1: 0 },
+//   arus: { sensor1: 0 },
+// };
 const zeroTracker = {
-  suhu: { sensor1: 0, sensor2: 0 },
-  kelembapan: { sensor1: 0, sensor2: 0 },
-  cahaya: { sensor1: 0, sensor2: 0 },
-  gas: { sensor1: 0, sensor2: 0 },
-  arus: { sensor1: 0, sensor2: 0 },
+  suhu: { '0': 0 },         // sensor1 (indeks 0)
+  kelembapan: { '0': 0 },  // sensor1 (indeks 0)
+  cahaya: { '0': 0, '1': 0 }, // sensor1 (indeks 0), sensor2 (indeks 1)
+  gas: { '0': 0 },          // sensor1 (indeks 0)
+  arus: { '0': 0 },         // sensor1 (indeks 0)
 };
+
+// client.on("message", async (topic, payload) => {
+//   const messageString = payload.toString();
+
+//   const processData = async (data) => {
+//     const newReading = new Reading(data);
+//     await newReading.save();
+//     console.log("Data saved to MongoDB!");
+
+//     for (const sensorType in data) {
+//       for (const sensorIndex in data[sensorType]) {
+//         if (data[sensorType][sensorIndex] === 0) {
+//           zeroTracker[sensorType][sensorIndex]++;
+//         } else {
+//           zeroTracker[sensorType][sensorIndex] = 0;
+//         }
+
+//         if (zeroTracker[sensorType][sensorIndex] === 3) {
+//           console.log(`FAILURE DETECTED: ${sensorType} ${sensorIndex}`);
+//           const existingFailure = await Failure.findOne({
+//             sensorType,
+//             sensorIndex,
+//             resolved: false,
+//           });
+//           if (!existingFailure) {
+//             const message = `Sensor ${sensorType} (${sensorIndex}) reported zero value 3 times in a row.`;
+//             await Failure.create({ sensorType, sensorIndex, message });
+//           }
+//           zeroTracker[sensorType][sensorIndex] = 0;
+//         }
+//       }
+//     }
+//   };
+
+//   try {
+//     const jsonData = JSON.parse(messageString);
+//     console.log("Processing message as JSON...");
+//     await processData(jsonData);
+//   } catch (error) {
+//     console.log("Not valid JSON, processing as CSV...");
+//     const stream = Readable.from(messageString);
+//     stream.pipe(csv({ headers: false })).on("data", async (row) => {
+//       try {
+//         const jsonData = {
+//           suhu: {
+//             sensor1: parseFloat(row["0"]),
+//             sensor2: parseFloat(row["1"]),
+//           },
+//           kelembapan: {
+//             sensor1: parseFloat(row["2"]),
+//             sensor2: parseFloat(row["3"]),
+//           },
+//           cahaya: { sensor1: parseInt(row["4"]), sensor2: parseInt(row["5"]) },
+//           gas: { sensor1: parseInt(row["6"]), sensor2: parseInt(row["7"]) },
+//           arus: {
+//             sensor1: parseFloat(row["8"]),
+//             sensor2: parseFloat(row["9"]),
+//           },
+//         };
+//         await processData(jsonData);
+//       } catch (processError) {
+//         console.error("Failed to process CSV row:", processError);
+//       }
+//     });
+//   }
+// });
+
+// client.on("message", async (topic, payload) => {
+//   const messageString = payload.toString();
+
+//   const processData = async (data) => {
+//     const newReading = new Reading(data);
+//     await newReading.save();
+//     console.log("Data saved to MongoDB!");
+
+//     for (const sensorType in data) {
+//       for (const sensorIndex in data[sensorType]) {
+//         if (zeroTracker[sensorType] && zeroTracker[sensorType][sensorIndex] !== undefined) {
+//           if (data[sensorType][sensorIndex] === 0) {
+//             zeroTracker[sensorType][sensorIndex]++;
+//           } else {
+//             zeroTracker[sensorType][sensorIndex] = 0;
+//           }
+
+//           if (zeroTracker[sensorType][sensorIndex] === 3) {
+//             console.log(`FAILURE DETECTED: ${sensorType} ${sensorIndex}`);
+//             const existingFailure = await Failure.findOne({
+//               sensorType,
+//               sensorIndex,
+//               resolved: false,
+//             });
+//             if (!existingFailure) {
+//               const message = `Sensor ${sensorType} (${sensorIndex}) reported zero value 3 times in a row.`;
+//               await Failure.create({ sensorType, sensorIndex, message });
+//             }
+//             zeroTracker[sensorType][sensorIndex] = 0;
+//           }
+//         }
+//       }
+//     }
+//   };
+
+//   try {
+//     const jsonData = JSON.parse(messageString);
+//     console.log("Processing message as JSON...");
+//     await processData(jsonData);
+//   } catch (error) {
+//     console.log("Not valid JSON, processing as CSV...");
+//     if (messageString.includes("lux1,lux2,mq,acs,temperature,humidity")) {
+//       console.log("Received CSV header, ignoring.");
+//       return;
+//     }
+    
+//     const stream = Readable.from(messageString);
+//     stream.pipe(csv({ headers: false })).on("data", async (row) => {
+//       try {
+//         const parseNumeric = (value, isFloat = true) => {
+//           if (value === null || value === undefined || value.trim() === '') return null;
+//           const num = isFloat ? parseFloat(value) : parseInt(value, 10);
+//           return isNaN(num) ? null : num;
+//         };
+//         const jsonData = {
+//           cahaya: { sensor1: parseNumeric(row['0'], false), sensor2: parseNumeric(row['1'], false) },
+//           gas: { sensor1: parseNumeric(row['2'], false) },
+//           arus: { sensor1: parseNumeric(row['3'], false) },
+//           suhu: { sensor1: parseNumeric(row['4']) },
+//           kelembapan: { sensor1: parseNumeric(row['5']) }
+//         };
+
+//         await processData(jsonData);
+//       } catch (processError) {
+//         console.error("Failed to process CSV row:", processError);
+//       }
+//     });
+//   }
+// });
 
 client.on("message", async (topic, payload) => {
   const messageString = payload.toString();
 
-  const processData = async (data) => {
-    const newReading = new Reading(data);
-    await newReading.save();
-    console.log("Data saved to MongoDB!");
+  // 1. Tangani pesan PERINTAH
+  if (topic === COMMAND_TOPIC) {
+    const command = JSON.parse(messageString);
+    console.log(`🕹️ Command Received: Set ${command.type} ${command.index} to ${command.level}`);
+    return;
+  }
 
-    for (const sensorType in data) {
-      for (const sensorIndex in data[sensorType]) {
-        if (data[sensorType][sensorIndex] === 0) {
-          zeroTracker[sensorType][sensorIndex]++;
-        } else {
-          zeroTracker[sensorType][sensorIndex] = 0;
-        }
-
-        if (zeroTracker[sensorType][sensorIndex] === 3) {
-          console.log(`FAILURE DETECTED: ${sensorType} ${sensorIndex}`);
-          const existingFailure = await Failure.findOne({
-            sensorType,
-            sensorIndex,
-            resolved: false,
-          });
-          if (!existingFailure) {
-            const message = `Sensor ${sensorType} (${sensorIndex}) reported zero value 3 times in a row.`;
-            await Failure.create({ sensorType, sensorIndex, message });
-          }
-          zeroTracker[sensorType][sensorIndex] = 0;
-        }
-      }
+  // 2. Tangani pesan DATA SENSOR
+  if (topic === TOPIC) {
+    // Abaikan baris header
+    if (messageString.includes("lux1,mq,acs,temperature,humidity")) {
+      console.log("Received CSV header, ignoring.");
+      return;
     }
-  };
+    
+    // Fungsi internal untuk memproses data (logika deteksi error diperbarui)
+    const processData = async (data) => {
+      const newReading = new Reading(data);
+      await newReading.save();
+      console.log("Data saved to MongoDB!"); // Log yang Anda lihat
 
-  try {
-    const jsonData = JSON.parse(messageString);
-    console.log("Processing message as JSON...");
-    await processData(jsonData);
-  } catch (error) {
-    console.log("Not valid JSON, processing as CSV...");
+      // Logika deteksi error dinamis
+      for (const sensorType in data) {
+        data[sensorType].forEach(async (value, index) => {
+          const key = `${sensorType}-${index}`;
+          if (!zeroTracker[key]) zeroTracker[key] = 0;
+
+          if (value === 0) zeroTracker[key]++;
+          else zeroTracker[key] = 0;
+
+          if (zeroTracker[key] === 3) {
+            const sensorIndex = `sensor${index + 1}`;
+            console.log(`FAILURE DETECTED: ${sensorType} ${sensorIndex}`);
+            const existingFailure = await Failure.findOne({ sensorType, sensorIndex, resolved: false });
+            if (!existingFailure) {
+              const message = `Sensor ${sensorType} (${sensorIndex}) reported zero value 3 times in a row.`;
+              await Failure.create({ sensorType, sensorIndex, message });
+            }
+            zeroTracker[key] = 0;
+          }
+        });
+      }
+    };
+
+    // --- LOGIKA PARSING CSV BARU (Format 5 Kolom) ---
+    console.log(`Processing message as CSV: ${messageString}`);
     const stream = Readable.from(messageString);
     stream.pipe(csv({ headers: false })).on("data", async (row) => {
       try {
-        const jsonData = {
-          suhu: {
-            sensor1: parseFloat(row["0"]),
-            sensor2: parseFloat(row["1"]),
-          },
-          kelembapan: {
-            sensor1: parseFloat(row["2"]),
-            sensor2: parseFloat(row["3"]),
-          },
-          cahaya: { sensor1: parseInt(row["4"]), sensor2: parseInt(row["5"]) },
-          gas: { sensor1: parseInt(row["6"]), sensor2: parseInt(row["7"]) },
-          arus: {
-            sensor1: parseFloat(row["8"]),
-            sensor2: parseFloat(row["9"]),
-          },
+        const parseNumeric = (value, isFloat = true) => {
+          if (value === null || value === undefined || value.trim() === '') return null;
+          const num = isFloat ? parseFloat(value) : parseInt(value, 10);
+          return isNaN(num) ? null : num;
         };
+        
+        // Format Simulator: lux1(0), mq(1), acs(2), dhtTemp(3), dhtHum(4)
+        // Map ke Skema DB:
+        const jsonData = {
+          cahaya: [parseNumeric(row['0'], false)].filter(v => v !== null),
+          gas: [parseNumeric(row['1'], false)].filter(v => v !== null),
+          arus: [parseNumeric(row['2'], false)].filter(v => v !== null),
+          suhu: [parseNumeric(row['3'])].filter(v => v !== null),
+          kelembapan: [parseNumeric(row['4'])].filter(v => v !== null)
+        };
+
         await processData(jsonData);
       } catch (processError) {
         console.error("Failed to process CSV row:", processError);
@@ -257,6 +421,84 @@ app.post("/api/users/change-password", protect, async (req, res) => {
   }
 });
 
+// app.get("/api/history/stats", protect, async (req, res) => {
+//   const { startTime, endTime, sensorType } = req.query;
+//   if (!startTime || !endTime || !sensorType) {
+//     return res
+//       .status(400)
+//       .json({ message: "startTime, endTime, and sensorType are required" });
+//   }
+
+//   const field1 = `$${sensorType}.sensor1`;
+//   const field2 = `$${sensorType}.sensor2`;
+
+//   try {
+//     const stats = await Reading.aggregate([
+//       {
+//         $match: {
+//           timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) },
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: null,
+//           maxValue: { $max: { $max: [field1, field2] } },
+//           minValue: { $min: { $min: [field1, field2] } },
+//           avgValue: { $avg: { $avg: [field1, field2] } },
+//         },
+//       },
+//     ]);
+//     res.json(stats[0] || {});
+//   } catch (error) {
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// });
+
+// app.get("/api/history/stats", protect, async (req, res) => {
+//   const { startTime, endTime, sensorType } = req.query;
+//   if (!startTime || !endTime || !sensorType) {
+//     return res
+//       .status(400)
+//       .json({ message: "startTime, endTime, and sensorType are required" });
+//   }
+
+//   try {
+//     const stats = await Reading.aggregate([
+//       {
+//         $match: {
+//           timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) },
+//           [sensorType]: { $exists: true }
+//         },
+//       },
+//       {
+//         $project: {
+//           allValues: {
+//             $filter: {
+//               input: [`$${sensorType}.sensor1`, `$${sensorType}.sensor2`],
+//               as: "value",
+//               cond: { $ne: ["$$value", null] }
+//             }
+//           }
+//         }
+//       },
+//       { $unwind: "$allValues" },
+//       {
+//         $group: {
+//           _id: null,
+//           maxValue: { $max: "$allValues" },
+//           minValue: { $min: "$allValues" },
+//           avgValue: { $avg: "$allValues" },
+//         },
+//       },
+//     ]);
+    
+//     res.json(stats[0] || {});
+//   } catch (error) {
+//     console.error("Aggregation Error:", error);
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// });
+
 app.get("/api/history/stats", protect, async (req, res) => {
   const { startTime, endTime, sensorType } = req.query;
   if (!startTime || !endTime || !sensorType) {
@@ -265,30 +507,110 @@ app.get("/api/history/stats", protect, async (req, res) => {
       .json({ message: "startTime, endTime, and sensorType are required" });
   }
 
-  const field1 = `$${sensorType}.sensor1`;
-  const field2 = `$${sensorType}.sensor2`;
-
   try {
     const stats = await Reading.aggregate([
+      // 1. Filter dokumen seperti biasa
       {
         $match: {
           timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) },
+          [sensorType]: { $exists: true, $ne: [] } // Pastikan field ada & bukan array kosong
         },
       },
+      
+      // 2. "Buka" (deconstruct) array sensor. 
+      //    Jika "cahaya: [336, 432]", ini akan menjadi 2 dokumen: {cahaya: 336} & {cahaya: 432}
+      { $unwind: `$${sensorType}` },
+      
+      // 3. Kelompokkan semua nilai yang sudah dibuka untuk dihitung
       {
         $group: {
           _id: null,
-          maxValue: { $max: { $max: [field1, field2] } },
-          minValue: { $min: { $min: [field1, field2] } },
-          avgValue: { $avg: { $avg: [field1, field2] } },
+          maxValue: { $max: `$${sensorType}` },
+          minValue: { $min: `$${sensorType}` },
+          avgValue: { $avg: `$${sensorType}` },
         },
       },
     ]);
-    res.json(stats[0] || {});
+    
+    // stats[0] akan berisi hasilnya. Jika tidak ada data, kirim objek default.
+    res.json(stats[0] || { maxValue: "N/A", minValue: "N/A", avgValue: "N/A" });
   } catch (error) {
+    console.error("Aggregation Error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
+
+// app.get("/api/history/chart", protect, async (req, res) => {
+//   const { startTime, endTime, sensorType } = req.query;
+//   if (!startTime || !endTime || !sensorType) {
+//     return res
+//       .status(400)
+//       .json({ message: "startTime, endTime, and sensorType are required" });
+//   }
+
+//   const outputFields = {
+//     avgSensor1: { $avg: `$${sensorType}.sensor1` },
+//     avgSensor2: { $avg: `$${sensorType}.sensor2` },
+//   };
+
+//   try {
+//     const chartData = await Reading.aggregate([
+//       {
+//         $match: {
+//           timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) },
+//         },
+//       },
+//       {
+//         $bucketAuto: {
+//           groupBy: "$timestamp",
+//           buckets: 20,
+//           output: outputFields,
+//         },
+//       },
+//     ]);
+//     res.json(chartData);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// });
+
+// app.get("/api/history/chart", protect, async (req, res) => {
+//   const { startTime, endTime, sensorType } = req.query;
+//   if (!startTime || !endTime || !sensorType) {
+//     return res
+//       .status(400)
+//       .json({ message: "startTime, endTime, and sensorType are required" });
+//   }
+
+//   const outputFields = {
+//     avgSensor1: { $avg: `$${sensorType}.sensor1` },
+//   };
+  
+//   if (sensorType === 'cahaya') {
+//     outputFields.avgSensor2 = { $avg: `$${sensorType}.sensor2` };
+//   }
+
+//   try {
+//     const chartData = await Reading.aggregate([
+//       {
+//         $match: {
+//           timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) },
+//           [sensorType]: { $exists: true }
+//         },
+//       },
+//       {
+//         $bucketAuto: {
+//           groupBy: "$timestamp",
+//           buckets: 20,
+//           output: outputFields,
+//         },
+//       },
+//     ]);
+//     res.json(chartData);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// });
 
 app.get("/api/history/chart", protect, async (req, res) => {
   const { startTime, endTime, sensorType } = req.query;
@@ -298,9 +620,12 @@ app.get("/api/history/chart", protect, async (req, res) => {
       .json({ message: "startTime, endTime, and sensorType are required" });
   }
 
+  // Buat output dinamis untuk 2 sensor (jika ada)
+  // $arrayElemAt akan mengambil elemen di indeks ke-N.
+  // $avg akan mengabaikan nilai 'null' jika array-nya hanya punya 1 elemen.
   const outputFields = {
-    avgSensor1: { $avg: `$${sensorType}.sensor1` },
-    avgSensor2: { $avg: `$${sensorType}.sensor2` },
+    avgSensor1: { $avg: { $arrayElemAt: [`$${sensorType}`, 0] } },
+    avgSensor2: { $avg: { $arrayElemAt: [`$${sensorType}`, 1] } },
   };
 
   try {
@@ -308,6 +633,7 @@ app.get("/api/history/chart", protect, async (req, res) => {
       {
         $match: {
           timestamp: { $gte: new Date(startTime), $lte: new Date(endTime) },
+          [sensorType]: { $exists: true, $ne: [] }
         },
       },
       {
@@ -320,6 +646,7 @@ app.get("/api/history/chart", protect, async (req, res) => {
     ]);
     res.json(chartData);
   } catch (error) {
+    console.error("Aggregation Error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });

@@ -1,21 +1,32 @@
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
 
-const SensorDataSchema = new mongoose.Schema(
-  {
-    sensor1: { type: Number, required: true },
-    sensor2: { type: Number, required: true },
-  },
-  { _id: false }
-);
+// const SensorValueSchema = new mongoose.Schema({
+//   sensor1: { type: Number },
+//   sensor2: { type: Number },
+// }, { _id: false });
+
+// const ReadingSchema = new mongoose.Schema({
+//   suhu: SensorValueSchema,
+//   kelembapan: SensorValueSchema,
+//   cahaya: SensorValueSchema,
+//   gas: SensorValueSchema,
+//   arus: SensorValueSchema,
+//   timestamp: { type: Date, default: Date.now }
+// });
+
+// const Reading = mongoose.model("Reading", ReadingSchema);
+// export default Reading;
+
+import mongoose from 'mongoose';
 
 const ReadingSchema = new mongoose.Schema({
-  suhu: SensorDataSchema,
-  kelembapan: SensorDataSchema,
-  cahaya: SensorDataSchema,
-  gas: SensorDataSchema,
-  arus: SensorDataSchema,
-  timestamp: { type: Date, default: Date.now },
+  suhu: [Number],
+  kelembapan: [Number],
+  cahaya: [Number],
+  gas: [Number],
+  arus: [Number],
+  timestamp: { type: Date, default: Date.now }
 });
 
-const Reading = mongoose.model("Reading", ReadingSchema);
+const Reading = mongoose.model('Reading', ReadingSchema);
 export default Reading;

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect, useCallback } from "react";
 import { useDashboard } from "@/context/DashboardContext";
@@ -15,23 +15,19 @@ const timeRanges = {
 };
 
 const sensorOptions = {
-  Suhu: { key: "suhu", unit: "°C", colors: ["#34d399", "#a7f3d0"] },
-  Kelembapan: { key: "kelembapan", unit: "%", colors: ["#60a5fa", "#a5b4fc"] },
-  "Intensitas Cahaya": {
-    key: "cahaya",
-    unit: "lux",
-    colors: ["#facc15", "#fde68a"],
-  },
-  "Kualitas Udara": { key: "gas", unit: "ppm", colors: ["#f87171", "#fca5a5"] },
-  "Penggunaan Arus": { key: "arus", unit: "A", colors: ["#c084fc", "#d8b4fe"] },
+  'Suhu': { key: 'suhu', unit: '°C', colors: ['#34d399', '#a7f3d0'] },
+  'Kelembapan': { key: 'kelembapan', unit: '%', colors: ['#60a5fa', '#a5b4fc'] },
+  'Intensitas Cahaya': { key: 'cahaya', unit: 'lux', colors: ['#facc15', '#fde68a'] },
+  'Kualitas Udara': { key: 'gas', unit: 'ppm', colors: ['#f87171', '#fca5a5'] },
+  'Penggunaan Arus': { key: 'arus', unit: 'A', colors: ['#c084fc', '#d8b4fe'] },
 };
 
 const thresholds = {
   Suhu: { upper: 27, lower: 25 },
   Kelembapan: { upper: 65, lower: 55 },
-  "Intensitas Cahaya": { upper: 650, lower: 250 },
-  "Kualitas Udara": { upper: 350, lower: 100 },
-  "Penggunaan Arus": { upper: 1.2, lower: 0.2 },
+  'Intensitas Cahaya': { upper: 650, lower: 250 },
+  'Kualitas Udara': { upper: 350, lower: 100 },
+  'Penggunaan Arus': { upper: 1.2, lower: 0.2 },
 };
 
 export default function HistoryPage() {
@@ -45,10 +41,7 @@ export default function HistoryPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!token) { setLoading(false); return; }
 
     const endTime = new Date();
     const startTime = new Date(endTime.getTime() - timeRanges[selectedRange]);
@@ -78,33 +71,34 @@ export default function HistoryPage() {
 
       setStats(statsData);
 
-      const labels = chartRawData.map((d) =>
-        new Date(d._id.min).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      );
-      setChartData({
-        labels,
-        datasets: [
-          {
-            label: `${selectedSensor} Sensor 1 (Avg)`,
-            data: chartRawData.map((d) => d.avgSensor1),
-            borderColor: sensorInfo.colors[0],
-            backgroundColor: `${sensorInfo.colors[0]}33`,
-            fill: true,
-            tension: 0.3,
-          },
-          {
-            label: `${selectedSensor} Sensor 2 (Avg)`,
-            data: chartRawData.map((d) => d.avgSensor2),
-            borderColor: sensorInfo.colors[1],
-            backgroundColor: `${sensorInfo.colors[1]}33`,
-            fill: true,
-            tension: 0.3,
-          },
-        ],
-      });
+      const labels = chartRawData.map((d) => new Date(d._id.min).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+      
+      const datasets = [];
+
+      if (chartRawData.some(d => d.avgSensor1 != null)) {
+        datasets.push({
+          label: `${selectedSensor} Sensor 1 (Avg)`,
+          data: chartRawData.map((d) => d.avgSensor1),
+          borderColor: sensorInfo.colors[0],
+          backgroundColor: `${sensorInfo.colors[0]}33`,
+          fill: true,
+          tension: 0.3,
+        });
+      }
+      
+      if (chartRawData.some(d => d.avgSensor2 != null)) {
+        datasets.push({
+          label: `${selectedSensor} Sensor 2 (Avg)`,
+          data: chartRawData.map((d) => d.avgSensor2),
+          borderColor: sensorInfo.colors[1],
+          backgroundColor: `${sensorInfo.colors[1]}33`,
+          fill: true,
+          tension: 0.3,
+        });
+      }
+
+      setChartData({ labels, datasets });
+
     } catch (error) {
       console.error("Failed to fetch history data", error);
     } finally {
@@ -113,7 +107,7 @@ export default function HistoryPage() {
   }, [selectedRange, selectedSensor]);
 
   useEffect(() => {
-    fetchData();
+      fetchData();
   }, [activeMenu, fetchData]);
 
   const currentUnit = sensorOptions[selectedSensor].unit;
@@ -121,10 +115,9 @@ export default function HistoryPage() {
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-semibold text-white">History Overview</h1>
-
-        <div className="flex flex-col sm:flex-row w-full md:w-auto gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Dropdown
             label="Sensor"
             options={Object.keys(sensorOptions)}
@@ -140,7 +133,7 @@ export default function HistoryPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-wait"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-wait"
           >
             <FiRefreshCw className={loading ? "animate-spin" : ""} />
             <span>{loading ? "Refreshing..." : "Refresh"}</span>
