@@ -51,11 +51,9 @@ client.on('connect', () => {
     if (!err) console.log(`👂 Subscribed to command topic: [${COMMAND_TOPIC}]`);
   });
 
-  // Kirim header sekali (opsional, tapi bagus untuk debugging)
   client.publish(TOPIC, "lux1,mq,acs,temperature,humidity");
 
   setInterval(() => {
-    // Format baru: lux1, mq, acs, dhtTemp, dhtHum
     const data = [
       getRandomValue(200, 700, 0), // lux1 (cahaya)
       getRandomValue(150, 400, 0), // mq (gas)

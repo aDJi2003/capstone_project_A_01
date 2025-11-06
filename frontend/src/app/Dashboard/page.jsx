@@ -6,7 +6,6 @@ import SensorChart from '@/components/SensorChart';
 import StatCard from '@/components/StatCard';
 import { FiChevronDown, FiPause, FiPlay } from 'react-icons/fi';
 
-// URL API Anda sudah benar (karena Anda revert backend)
 const API_URL = 'http://localhost:5000/api/latest-data';
 
 const thresholds = {
@@ -53,24 +52,20 @@ export default function DashboardPage() {
     return { min, max, avg, exceedCount };
   };
 
-  // --- FUNGSI UTAMA YANG DIPERBAIKI ---
   const formatChartData = (data) => {
     const labels = data.map((d) => new Date(d.timestamp).toLocaleTimeString());
 
     const createDataset = (label, dataKey, colors) => {
       const datasets = [];
       
-      // Temukan jumlah sensor maksimum untuk dataKey ini
-      // Cek data pertama, asumsi jumlah sensor konsisten
       const maxSensors = data[0] && data[0][dataKey] ? data[0][dataKey].length : 0;
       
       for (let i = 0; i < maxSensors; i++) {
-        // Cek apakah ada data valid untuk sensor ini (indeks i)
         if (data.some(d => d[dataKey] && d[dataKey][i] != null)) {
           datasets.push({
             label: `${label} Sensor ${i + 1}`,
-            data: data.map((d) => d[dataKey] ? d[dataKey][i] : null), // Ambil data dari array
-            borderColor: colors[i % colors.length], // Ulangi warna jika sensor > 2
+            data: data.map((d) => d[dataKey] ? d[dataKey][i] : null),
+            borderColor: colors[i % colors.length],
             backgroundColor: `${colors[i % colors.length]}33`,
             fill: true,
             tension: 0.3,
@@ -122,9 +117,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (selectedChart !== "all" && chartData[selectedChart]) {
-      // Gabungkan data dari semua dataset yang ada
       const combinedData = (chartData[selectedChart].datasets || []).flatMap(
-        (ds) => ds.data.filter(val => val != null) // Filter nulls
+        (ds) => ds.data.filter(val => val != null)
       );
       const currentThresholds = thresholds[selectedChart];
 
@@ -143,19 +137,6 @@ export default function DashboardPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
-
-  // Mengaktifkan kembali pengecekan menu
-  // if (activeMenu !== "Dashboard") {
-  //   return (
-  //     <div>
-  //       <h1 className="text-2xl font-semibold text-white">{activeMenu}</h1>
-  //       <p className="mt-2 text-gray-300">
-  //         This is the main content area for the{" "}
-  //         <span className="font-bold">{activeMenu}</span> page.
-  //       </p>
-  //     </div>
-  //   );
-  // }
 
   const getUnit = (chartName) => {
     const units = {
@@ -181,7 +162,7 @@ export default function DashboardPage() {
           </h1>
           <button
             onClick={() => setIsRunning(!isRunning)}
-            className="flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
           >
             {isRunning ? <FiPause size={16} /> : <FiPlay size={16} />}
             <span className="text-sm font-medium">
@@ -204,14 +185,14 @@ export default function DashboardPage() {
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-gray-700 rounded-lg shadow-xl z-10">
+            <div className="absolute right-0 mt-2 w-56 bg-gray-700 rounded-lg shadow-xl z-10 cursor-pointer">
               <ul>
                 <li
                   onClick={() => {
                     setSelectedChart("all");
                     setIsDropdownOpen(false);
                   }}
-                  className="px-4 py-2 hover:bg-gray-600 cursor-pointer rounded-t-lg"
+                  className="px-4 py-2 hover:bg-gray-600 cursor-pointer rounded-t-lg text-white"
                 >
                   All Charts
                 </li>
@@ -222,7 +203,7 @@ export default function DashboardPage() {
                       setSelectedChart(option);
                       setIsDropdownOpen(false);
                     }}
-                    className="px-4 py-2 hover:bg-gray-600 cursor-pointer last:rounded-b-lg"
+                    className="px-4 py-2 hover:bg-gray-600 cursor-pointer last:rounded-b-lg text-white"
                   >
                     {option}
                   </li>
