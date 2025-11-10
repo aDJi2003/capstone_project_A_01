@@ -8,10 +8,10 @@ import Dropdown from "@/components/Dropdown";
 import { FiRefreshCw } from "react-icons/fi";
 
 const timeRanges = {
-  "Last Hour": 1 * 60 * 60 * 1000,
+  "Last 20 Minutes": 20 * 60 * 1000,
+  "Last 1 Hour": 1 * 60 * 60 * 1000,
+  "Last 3 Hours": 3 * 60 * 60 * 1000,
   "Last 6 Hours": 6 * 60 * 60 * 1000,
-  "Last 24 Hours": 24 * 60 * 60 * 1000,
-  "Last 7 Days": 7 * 24 * 60 * 60 * 1000,
 };
 
 const sensorOptions = {
@@ -32,7 +32,7 @@ const thresholds = {
 
 export default function HistoryPage() {
   const { activeMenu } = useDashboard();
-  const [selectedRange, setSelectedRange] = useState("Last Hour");
+  const [selectedRange, setSelectedRange] = useState("Last 1 Hour");
   const [selectedSensor, setSelectedSensor] = useState("Suhu");
   const [stats, setStats] = useState(null);
   const [chartData, setChartData] = useState({ labels: [], datasets: [] });
