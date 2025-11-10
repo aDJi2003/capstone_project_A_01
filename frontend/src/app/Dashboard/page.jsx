@@ -78,7 +78,7 @@ export default function DashboardPage() {
     const newChartData = {
       Suhu: createDataset("Suhu", "suhu", ["#34d399", "#a7f3d0"]),
       Kelembapan: createDataset("Kelembapan", "kelembapan", ["#60a5fa", "#a5b4fc"]),
-      "Intensitas Cahaya": createDataset("Intensitas Cahaya", "cahaya", ["#facc15", "#fde68a"]),
+      "Intensitas Cahaya": createDataset("Intensitas Cahaya", "cahaya", ['#ffd700', '#fde68a', '#fbbf24', '#fef3c7']),
       "Kualitas Udara": createDataset("Kualitas Udara", "gas", ["#f87171", "#fca5a5"]),
       "Penggunaan Arus": createDataset("Penggunaan Arus", "arus", ["#c084fc", "#d8b4fe"]),
     };

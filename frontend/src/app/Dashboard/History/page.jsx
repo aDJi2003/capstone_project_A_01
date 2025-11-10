@@ -17,7 +17,7 @@ const timeRanges = {
 const sensorOptions = {
   'Suhu': { key: 'suhu', unit: '°C', colors: ['#34d399', '#a7f3d0'] },
   'Kelembapan': { key: 'kelembapan', unit: '%', colors: ['#60a5fa', '#a5b4fc'] },
-  'Intensitas Cahaya': { key: 'cahaya', unit: 'lux', colors: ['#facc15', '#fde68a'] },
+  'Intensitas Cahaya': { key: 'cahaya', unit: 'lux', colors: ['#facc15', '#fde68a', '#fbbf24', '#fef3c7'] },
   'Kualitas Udara': { key: 'gas', unit: 'ppm', colors: ['#f87171', '#fca5a5'] },
   'Penggunaan Arus': { key: 'arus', unit: 'A', colors: ['#c084fc', '#d8b4fe'] },
 };
@@ -55,16 +55,11 @@ export default function HistoryPage() {
 
     try {
       const [statsRes, chartRes] = await Promise.all([
-        fetch(`http://localhost:5000/api/history/stats?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`http://localhost:5000/api/history/chart?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        fetch(`http://localhost:5000/api/history/stats?${params}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`http://localhost:5000/api/history/chart?${params}`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
-      if (!statsRes.ok || !chartRes.ok)
-        throw new Error("Failed to fetch history data");
+      if (!statsRes.ok || !chartRes.ok) throw new Error("Failed to fetch history data");
 
       const statsData = await statsRes.json();
       const chartRawData = await chartRes.json();
@@ -73,29 +68,23 @@ export default function HistoryPage() {
 
       const labels = chartRawData.map((d) => new Date(d._id.min).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
       
+      // --- LOGIKA DATASET DINAMIS ---
       const datasets = [];
+      const sensorKeys = ['avgSensor1', 'avgSensor2', 'avgSensor3', 'avgSensor4'];
 
-      if (chartRawData.some(d => d.avgSensor1 != null)) {
-        datasets.push({
-          label: `${selectedSensor} Sensor 1 (Avg)`,
-          data: chartRawData.map((d) => d.avgSensor1),
-          borderColor: sensorInfo.colors[0],
-          backgroundColor: `${sensorInfo.colors[0]}33`,
-          fill: true,
-          tension: 0.3,
-        });
-      }
-      
-      if (chartRawData.some(d => d.avgSensor2 != null)) {
-        datasets.push({
-          label: `${selectedSensor} Sensor 2 (Avg)`,
-          data: chartRawData.map((d) => d.avgSensor2),
-          borderColor: sensorInfo.colors[1],
-          backgroundColor: `${sensorInfo.colors[1]}33`,
-          fill: true,
-          tension: 0.3,
-        });
-      }
+      sensorKeys.forEach((key, index) => {
+        // Cek apakah ada data valid untuk sensor ini
+        if (chartRawData.some(d => d[key] != null)) {
+          datasets.push({
+            label: `${selectedSensor} Sensor ${index + 1} (Avg)`,
+            data: chartRawData.map((d) => d[key]),
+            borderColor: sensorInfo.colors[index % sensorInfo.colors.length],
+            backgroundColor: `${sensorInfo.colors[index % sensorInfo.colors.length]}33`,
+            fill: true,
+            tension: 0.3,
+          });
+        }
+      });
 
       setChartData({ labels, datasets });
 

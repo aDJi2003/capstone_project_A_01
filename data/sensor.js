@@ -51,15 +51,21 @@ client.on('connect', () => {
     if (!err) console.log(`👂 Subscribed to command topic: [${COMMAND_TOPIC}]`);
   });
 
-  client.publish(TOPIC, "lux1,mq,acs,temperature,humidity");
+  client.publish(TOPIC, "lux1,lux2,lux3,lux4,mq1,mq2,temp1,temp2,hum1,hum2,acs1");
 
   setInterval(() => {
     const data = [
-      getRandomValue(200, 700, 0), // lux1 (cahaya)
-      getRandomValue(150, 400, 0), // mq (gas)
-      getRandomValue(1, 10, 0),   // acs (arus)
-      getRandomValue(24, 28),     // dhtTemp (suhu)
-      getRandomValue(55, 65)      // dhtHum (kelembapan)
+      getRandomValue(200, 700, 0), // cahaya 1
+      getRandomValue(200, 700, 0), // cahaya 2
+      getRandomValue(200, 700, 0), // cahaya 3
+      getRandomValue(200, 700, 0), // cahaya 4
+      getRandomValue(150, 400, 0), // gas 1
+      getRandomValue(160, 410, 0), // gas 2
+      getRandomValue(24, 28),     // suhu 1
+      getRandomValue(25, 29),     // suhu 2
+      getRandomValue(55, 65),     // kelembapan 1
+      getRandomValue(57, 67),     // kelembapan 2
+      getRandomValue(1, 10, 0)    // arus 1
     ];
 
     const payload = data.join(',');

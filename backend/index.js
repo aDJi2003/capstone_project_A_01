@@ -60,28 +60,32 @@ const zeroTracker = {
 client.on("message", async (topic, payload) => {
   const messageString = payload.toString();
 
+  // 1. Tangani pesan PERINTAH
   if (topic === COMMAND_TOPIC) {
     const command = JSON.parse(messageString);
     console.log(`Command Received: Set ${command.type} ${command.index} to ${command.level}`);
     return;
   }
 
+  // 2. Tangani pesan DATA SENSOR
   if (topic === TOPIC) {
-    if (messageString.includes("lux1,mq,acs,temperature,humidity")) {
+    // Abaikan baris header
+    if (messageString.includes("lux1,lux2,lux3,lux4")) {
       console.log("Received CSV header, ignoring.");
       return;
     }
     
+    // Fungsi internal untuk memproses data
     const processData = async (data) => {
       const newReading = new Reading(data);
       await newReading.save();
       console.log("Data saved to MongoDB!");
 
+      // Logika deteksi error dinamis (Kode ini sudah robust, tidak perlu diubah)
       for (const sensorType in data) {
         data[sensorType].forEach(async (value, index) => {
-          const key = `${sensorType}-${index}`;
+          const key = `${sensorType}-${index}`; 
           if (!zeroTracker[key]) zeroTracker[key] = 0;
-
           if (value === 0) zeroTracker[key]++;
           else zeroTracker[key] = 0;
 
@@ -99,6 +103,7 @@ client.on("message", async (topic, payload) => {
       }
     };
 
+    // --- LOGIKA PARSING BARU (Format 11 Kolom) ---
     console.log(`Processing message as CSV: ${messageString}`);
     const stream = Readable.from(messageString);
     stream.pipe(csv({ headers: false })).on("data", async (row) => {
@@ -109,12 +114,34 @@ client.on("message", async (topic, payload) => {
           return isNaN(num) ? null : num;
         };
         
+        // Format STM32: 
+        // 0-3: cahaya 1-4
+        // 4-5: gas 1-2
+        // 6-7: suhu 1-2
+        // 8-9: kelembapan 1-2
+        // 10:  arus 1
         const jsonData = {
-          cahaya: [parseNumeric(row['0'], false)].filter(v => v !== null),
-          gas: [parseNumeric(row['1'], false)].filter(v => v !== null),
-          arus: [parseNumeric(row['2'], false)].filter(v => v !== null),
-          suhu: [parseNumeric(row['3'])].filter(v => v !== null),
-          kelembapan: [parseNumeric(row['4'])].filter(v => v !== null)
+          cahaya: [
+            parseNumeric(row['0'], false),
+            parseNumeric(row['1'], false),
+            parseNumeric(row['2'], false),
+            parseNumeric(row['3'], false)
+          ].filter(v => v !== null),
+          gas: [
+            parseNumeric(row['4'], false),
+            parseNumeric(row['5'], false)
+          ].filter(v => v !== null),
+          suhu: [
+            parseNumeric(row['6']),
+            parseNumeric(row['7'])
+          ].filter(v => v !== null),
+          kelembapan: [
+            parseNumeric(row['8']),
+            parseNumeric(row['9'])
+          ].filter(v => v !== null),
+          arus: [
+            parseNumeric(row['10'], false)
+          ].filter(v => v !== null)
         };
 
         await processData(jsonData);
@@ -304,9 +331,12 @@ app.get("/api/history/chart", protect, async (req, res) => {
       .json({ message: "startTime, endTime, and sensorType are required" });
   }
 
+  // Buat output dinamis untuk 4 sensor (jumlah maksimum)
   const outputFields = {
     avgSensor1: { $avg: { $arrayElemAt: [`$${sensorType}`, 0] } },
     avgSensor2: { $avg: { $arrayElemAt: [`$${sensorType}`, 1] } },
+    avgSensor3: { $avg: { $arrayElemAt: [`$${sensorType}`, 2] } },
+    avgSensor4: { $avg: { $arrayElemAt: [`$${sensorType}`, 3] } },
   };
 
   try {
