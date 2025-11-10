@@ -521,6 +521,57 @@ app.get("/api/search", protect, async (req, res) => {
   }
 });
 
+function classifyIKE(ikeValue) {
+  if (ikeValue >= 32.99) return "Sangat Boros";
+  if (ikeValue >= 26.67 && ikeValue < 32.99) return "Boros";
+  if (ikeValue >= 20.25 && ikeValue < 26.67) return "Agak Boros";
+  if (ikeValue >= 16.78 && ikeValue < 20.25) return "Cukup Efisien";
+  if (ikeValue >= 11.01 && ikeValue < 16.78) return "Efisien";
+  if (ikeValue >= 5.79 && ikeValue < 11.01) return "Sangat Efisien";
+  if (ikeValue < 5.79) return "Sangat Efisien";
+  return "Terjadi Kesalahan Perhitungan";
+}
+
+app.get("/api/data/ike", protect, async (req, res) => {
+  try {
+    const buildingArea = (0.5 * 0.3) * 2;
+    const VOLTAGE = 12;
+
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - (1 * 60 * 60 * 1000)); 
+
+    const energyData = await Reading.aggregate([
+      { $match: { timestamp: { $gte: oneHourAgo, $lte: now } } },
+      { $unwind: "$arus" },
+      {
+        $group: {
+          _id: null,
+          totalAmpereSeconds: { $sum: "$arus" } 
+        }
+      }
+    ]);
+
+    if (!energyData.length) {
+      return res.json({ ikeValue: 0, classification: "N/A" });
+    }
+
+    const totalAmpSeconds = energyData[0].totalAmpereSeconds;
+    const totalWattSeconds = totalAmpSeconds * VOLTAGE;
+    const totalWattHours = totalWattSeconds / 3600;
+    const ikeValue = totalWattHours / buildingArea;
+    const classification = classifyIKE(ikeValue);
+
+    res.json({
+      ikeValue: ikeValue.toFixed(2),
+      classification: classification,
+    });
+
+  } catch (error) {
+    console.error("IKE Calculation Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("Backend Server is running.");
 });

@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useDashboard } from '@/context/DashboardContext';
 import SensorChart from '@/components/SensorChart';
 import StatCard from '@/components/StatCard';
-import { FiChevronDown, FiPause, FiPlay } from 'react-icons/fi';
+import { FiChevronDown, FiPause, FiPlay, FiCpu } from 'react-icons/fi';
 
 const API_URL = 'http://localhost:5000/api/latest-data';
+const IKE_API_URL = 'http://localhost:5000/api/data/ike';
 
 const thresholds = {
   Suhu: { upper: 27, lower: 25 },
@@ -24,8 +25,50 @@ const chartOptions = [
   "Penggunaan Arus",
 ];
 
+const IkeCard = ({ data }) => {
+  const [colorClass, setColorClass] = useState('text-gray-300');
+
+  useEffect(() => {
+    switch (data?.classification) {
+      case 'Sangat Efisien':
+      case 'Efisien':
+        setColorClass('text-green-400'); break;
+      case 'Cukup Efisien':
+        setColorClass('text-blue-400'); break;
+      case 'Agak Boros':
+        setColorClass('text-yellow-400'); break;
+      case 'Boros':
+      case 'Sangat Boros':
+        setColorClass('text-red-400'); break;
+      default:
+        setColorClass('text-gray-300');
+    }
+  }, [data]);
+
+  return (
+    <div className="bg-gray-800 p-4 rounded-lg shadow-lg flex items-center space-x-4">
+      <div className="bg-gray-700 p-3 rounded-lg">
+        <FiCpu className="h-6 w-6 text-purple-400" />
+      </div>
+      <div>
+        <p className="text-sm text-gray-400">Intensitas Konsumsi Energi (IKE)</p>
+        {!data ? (
+          <p className="text-xl font-semibold text-white animate-pulse">Loading...</p>
+        ) : (
+          <p className="text-xl font-semibold text-white">
+            {data.ikeValue} <span className="text-sm">Wh/m²/jam</span>
+            <span className={`ml-2 text-lg ${colorClass}`}>({data.classification})</span>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function DashboardPage() {
   const { activeMenu } = useDashboard();
+
+  const [ikeData, setIkeData] = useState(null);
 
   const [chartData, setChartData] = useState({});
   const [stats, setStats] = useState({});
@@ -138,6 +181,28 @@ export default function DashboardPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
 
+  useEffect(() => {
+    const fetchIkeData = async () => {
+      console.log("Fetching IKE data...");
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const response = await fetch(IKE_API_URL, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error("Failed to fetch IKE data");
+        const data = await response.json();
+        setIkeData(data);
+      } catch (error) {
+        console.error(error.message);
+      }
+    };
+
+    fetchIkeData(); 
+    const ikeInterval = setInterval(fetchIkeData, 300000); 
+    return () => clearInterval(ikeInterval);
+  }, []);
+
   const getUnit = (chartName) => {
     const units = {
       Suhu: "°C",
@@ -212,6 +277,10 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="mb-6">
+        <IkeCard data={ikeData} />
       </div>
 
       {selectedChart === "all" ? (
