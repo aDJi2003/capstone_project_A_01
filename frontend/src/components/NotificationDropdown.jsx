@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import { FiAlertTriangle } from "react-icons/fi";
 import { useDashboard } from "@/context/DashboardContext";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function NotificationDropdown({ notifications, onResolve }) {
   const { user } = useDashboard();
 
@@ -11,7 +13,7 @@ export default function NotificationDropdown({ notifications, onResolve }) {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `http://localhost:5000/api/failures/resolve/${id}`,
+        `${API_BASE_URL}/api/failures/resolve/${id}`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },

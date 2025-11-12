@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import ClientOnly from '@/components/ClientOnly';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function ResetPasswordPage({ params }) {
   const { token } = params;
   const router = useRouter();
@@ -25,7 +27,7 @@ export default function ResetPasswordPage({ params }) {
       return toast.warn("Password must be at least 8 characters.");
     }
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/reset-password/${token}`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),

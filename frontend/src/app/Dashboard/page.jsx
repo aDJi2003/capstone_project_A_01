@@ -6,8 +6,10 @@ import SensorChart from '@/components/SensorChart';
 import StatCard from '@/components/StatCard';
 import { FiChevronDown, FiPause, FiPlay, FiCpu } from 'react-icons/fi';
 
-const API_URL = 'http://localhost:5000/api/latest-data';
-const IKE_API_URL = 'http://localhost:5000/api/data/ike';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
+const API_URL = `${API_BASE_URL}/api/latest-data`;
+const IKE_API_URL = `${API_BASE_URL}/api/data/ike`;
 
 const thresholds = {
   Suhu: { upper: 27, lower: 25 },

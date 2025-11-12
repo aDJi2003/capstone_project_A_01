@@ -6,6 +6,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import ClientOnly from "@/components/ClientOnly";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function SettingsPage() {
   const [userEmail, setUserEmail] = useState("Loading...");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -22,7 +24,7 @@ export default function SettingsPage() {
       if (!token) return;
 
       try {
-        const response = await fetch("http://localhost:5000/api/users/me", {
+        const response = await fetch(`${API_BASE_URL}/api/users/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -51,7 +53,7 @@ export default function SettingsPage() {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        "http://localhost:5000/api/users/change-password",
+        `${API_BASE_URL}/api/users/change-password`,
         {
           method: "POST",
           headers: {

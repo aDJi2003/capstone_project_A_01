@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useDashboard } from '@/context/DashboardContext';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function UserManagementPage() {
   const { activeMenu } = useDashboard();
   const [users, setUsers] = useState([]);
@@ -15,7 +17,7 @@ export default function UserManagementPage() {
       if (!token) { setLoading(false); return; }
 
       try {
-        const response = await fetch('http://localhost:5000/api/users', {
+        const response = await fetch(`${API_BASE_URL}/api/users`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!response.ok) throw new Error('Failed to fetch users');

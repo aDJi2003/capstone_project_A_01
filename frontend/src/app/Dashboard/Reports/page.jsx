@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useDashboard } from '@/context/DashboardContext';
 import { FiRefreshCw } from 'react-icons/fi';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function ReportsPage() {
   const { activeMenu } = useDashboard();
   const [failures, setFailures] = useState([]);
@@ -17,10 +19,10 @@ export default function ReportsPage() {
 
     try {
       const [failuresRes, commandsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/failures/all', {
+        fetch(`${API_BASE_URL}/api/failures/all`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch('http://localhost:5000/api/commands/all', {
+        fetch(`${API_BASE_URL}/api/commands/all`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);

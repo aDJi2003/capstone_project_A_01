@@ -9,6 +9,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ClientOnly from '@/components/ClientOnly';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -27,7 +29,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -5,6 +5,8 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FiZap, FiWind, FiFilter } from 'react-icons/fi';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const ActuatorCard = ({ icon, name, index, onCommand, activeLevel, levels }) => {
   const handleCommand = (level) => {
     const levelLowerCase = level.toLowerCase();
@@ -56,7 +58,7 @@ export default function SystemControlPage() {
 
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('http://localhost:5000/api/control', {
+      const response = await fetch(`${API_BASE_URL}/api/control`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

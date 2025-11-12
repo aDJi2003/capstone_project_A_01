@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const DashboardContext = createContext();
 
 const initialActuatorStates = {
@@ -26,7 +28,7 @@ export function DashboardProvider({ children }) {
       const token = localStorage.getItem("token");
       if (token) {
         try {
-          const response = await fetch("http://localhost:5000/api/users/me", {
+          const response = await fetch(`${API_BASE_URL}/api/users/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (response.ok) {
