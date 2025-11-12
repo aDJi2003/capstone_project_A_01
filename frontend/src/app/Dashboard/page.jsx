@@ -50,12 +50,12 @@ const IkeCard = ({ data }) => {
       <div className="bg-gray-700 p-3 rounded-lg">
         <FiCpu className="h-6 w-6 text-purple-400" />
       </div>
-      <div>
+      <div className="min-w-0 flex-1">
         <p className="text-sm text-gray-400">Intensitas Konsumsi Energi (IKE)</p>
         {!data ? (
           <p className="text-xl font-semibold text-white animate-pulse">Loading...</p>
         ) : (
-          <p className="text-xl font-semibold text-white">
+          <p className="text-xl font-semibold text-white break-words">
             {data.ikeValue} <span className="text-sm">Wh/m²/jam</span>
             <span className={`ml-2 text-lg ${colorClass}`}>({data.classification})</span>
           </p>
@@ -219,72 +219,77 @@ export default function DashboardPage() {
     selectedChart === "all" ? "All Charts" : selectedChart;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold text-white">
-            Dashboard Overview
-          </h1>
+    <div className="w-full">
+      <div className="mb-5">
+        <h1 className="text-xl sm:text-2xl font-semibold text-white mb-4">
+          Dashboard Overview
+        </h1>
+        
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <button
             onClick={() => setIsRunning(!isRunning)}
-            className="flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer flex-shrink-0"
           >
             {isRunning ? <FiPause size={16} /> : <FiPlay size={16} />}
             <span className="text-sm font-medium">
               {isRunning ? "Pause" : "Resume"}
             </span>
           </button>
-        </div>
 
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center justify-between w-56 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <span>View: {displaySelectedChart}</span>
-            <FiChevronDown
-              className={`transition-transform ${
-                isDropdownOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
+          {/* Dropdown */}
+          <div className="relative flex-1 sm:flex-initial" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center justify-between w-full sm:w-56 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <span className="truncate mr-2">View: {displaySelectedChart}</span>
+              <FiChevronDown
+                className={`transition-transform flex-shrink-0 ${
+                  isDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
 
-          {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-gray-700 rounded-lg shadow-xl z-10 cursor-pointer">
-              <ul>
-                <li
-                  onClick={() => {
-                    setSelectedChart("all");
-                    setIsDropdownOpen(false);
-                  }}
-                  className="px-4 py-2 hover:bg-gray-600 cursor-pointer rounded-t-lg text-white"
-                >
-                  All Charts
-                </li>
-                {chartOptions.map((option) => (
+            {isDropdownOpen && (
+              <div className="absolute left-0 right-0 sm:right-auto sm:left-auto sm:w-56 mt-2 bg-gray-700 rounded-lg shadow-xl z-10 cursor-pointer max-h-80 overflow-y-auto">
+                <ul>
                   <li
-                    key={option}
                     onClick={() => {
-                      setSelectedChart(option);
+                      setSelectedChart("all");
                       setIsDropdownOpen(false);
                     }}
-                    className="px-4 py-2 hover:bg-gray-600 cursor-pointer last:rounded-b-lg text-white"
+                    className="px-4 py-2 hover:bg-gray-600 cursor-pointer rounded-t-lg text-white"
                   >
-                    {option}
+                    All Charts
                   </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                  {chartOptions.map((option) => (
+                    <li
+                      key={option}
+                      onClick={() => {
+                        setSelectedChart(option);
+                        setIsDropdownOpen(false);
+                      }}
+                      className="px-4 py-2 hover:bg-gray-600 cursor-pointer last:rounded-b-lg text-white"
+                    >
+                      {option}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* IKE Card */}
       <div className="mb-6">
         <IkeCard data={ikeData} />
       </div>
 
+      {/* Charts Section */}
       {selectedChart === "all" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {chartOptions.map((option) => (
             <SensorChart
               key={option}
@@ -296,7 +301,7 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2">
             <SensorChart
               title={selectedChart}

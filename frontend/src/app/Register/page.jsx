@@ -59,7 +59,7 @@ export default function RegisterPage() {
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gray-900 text-white">
       <ToastContainer theme="dark" position="top-right" autoClose={2000} />
-      <div className="flex w-full max-w-4xl rounded-xl bg-gray-800 shadow-lg">
+      <div className="flex w-full mx-[5vw] max-w-4xl rounded-xl bg-gray-800 shadow-lg">
         {/* Kolom Kiri */}
         <div className="hidden md:flex w-1/2 flex-col items-center justify-center rounded-l-xl bg-gray-700 p-12 text-center">
           <Image

@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gray-900 text-white">
       <ToastContainer theme="dark" />
-      <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-xl shadow-lg">
+      <div className="w-full mx-[5vw] max-w-md p-8 space-y-6 bg-gray-800 rounded-xl shadow-lg">
         <h2 className="text-2xl font-bold text-center">Forgot Password</h2>
         <p className="text-center text-gray-400">Enter your email to receive a password reset link.</p>
         <form onSubmit={handleSubmit} className="space-y-6">
