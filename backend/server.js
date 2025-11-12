@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import csv from "csv-parser";
 import { Readable } from "stream";
+import nodemailer from 'nodemailer';
 
 import Reading from "./models/Reading.js";
 import User from "./models/User.js";
