@@ -28,10 +28,10 @@ mongoose
   .then(() => console.log("Connected to MongoDB!"))
   .catch((err) => console.error("DB Connection Error:", err));
 
-const BROKER_URL = "mqtt://localhost:1883";
-const TOPIC = "building/room/data";
-// const BROKER_URL = 'mqtt://test.mosquitto.org:1883';
-// const TOPIC = 'sensor/data/system';
+// const BROKER_URL = "mqtt://localhost:1883";
+// const TOPIC = "building/room/data";
+const BROKER_URL = 'mqtt://test.mosquitto.org:1883';
+const TOPIC = 'sensor/data/system';
 const COMMAND_TOPIC = 'building/room/command';
 
 const client = mqtt.connect(BROKER_URL, {
