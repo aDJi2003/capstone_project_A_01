@@ -5,9 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FiZap, FiWind, FiFilter } from 'react-icons/fi';
 
-const ActuatorCard = ({ icon, name, index, onCommand, activeLevel }) => {
-  const levels = ['Off', 'Low', 'Medium', 'High'];
-
+const ActuatorCard = ({ icon, name, index, onCommand, activeLevel, levels }) => {
   const handleCommand = (level) => {
     const levelLowerCase = level.toLowerCase();
     onCommand(name.toLowerCase().replace(' ', ''), index, levelLowerCase);
@@ -27,7 +25,7 @@ const ActuatorCard = ({ icon, name, index, onCommand, activeLevel }) => {
               key={level}
               onClick={() => handleCommand(level)}
               disabled={isSelected}
-              className={`flex-1 py-2 font-semibold rounded-lg transition-colors cursor-pointer sm:text-sm text-xs
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer
                 ${isSelected 
                   ? 'bg-blue-600 text-white' 
                   : 'bg-gray-600 hover:bg-gray-500 text-gray-300'
@@ -44,13 +42,13 @@ const ActuatorCard = ({ icon, name, index, onCommand, activeLevel }) => {
   );
 };
 
-
 export default function SystemControlPage() {
-  const { actuatorStates, updateActuatorState } = useDashboard();
+  const { activeMenu, actuatorStates, updateActuatorState, user } = useDashboard();
 
   const sendActuatorCommand = async (actuatorType, index, level) => {
     const actuatorKey = `${actuatorType.charAt(0).toUpperCase() + actuatorType.slice(1)}-${index}`
-      .replace('Lampuled', 'Lampu LED').replace('Airpurifier', 'Air Purifier');
+      .replace('Lampuled', 'Lampu LED')
+      .replace('Exhaustfan', 'Exhaust Fan');
     
     if (actuatorStates[actuatorKey] === level) return;
     
@@ -60,7 +58,10 @@ export default function SystemControlPage() {
     try {
       const response = await fetch('http://localhost:5000/api/control', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ actuatorType, index, level }),
       });
 
@@ -76,12 +77,14 @@ export default function SystemControlPage() {
   };
   
   const actuators = [
-    { name: 'Lampu LED', index: 1, icon: <FiZap className="text-yellow-400" /> },
-    { name: 'Lampu LED', index: 2, icon: <FiZap className="text-yellow-400" /> },
-    { name: 'Air Purifier', index: 1, icon: <FiFilter className="text-green-400" /> },
-    { name: 'Air Purifier', index: 2, icon: <FiFilter className="text-green-400" /> },
-    { name: 'Kipas', index: 1, icon: <FiWind className="text-blue-400" /> },
-    { name: 'Kipas', index: 2, icon: <FiWind className="text-blue-400" /> },
+    { name: 'Lampu LED', index: 1, icon: <FiZap className="text-yellow-400" />, levels: ['Off', 'Low', 'Medium', 'High'] },
+    { name: 'Lampu LED', index: 2, icon: <FiZap className="text-yellow-400" />, levels: ['Off', 'Low', 'Medium', 'High'] },
+    { name: 'Lampu LED', index: 3, icon: <FiZap className="text-yellow-400" />, levels: ['Off', 'Low', 'Medium', 'High'] },
+    { name: 'Lampu LED', index: 4, icon: <FiZap className="text-yellow-400" />, levels: ['Off', 'Low', 'Medium', 'High'] },
+    { name: 'Exhaust Fan', index: 1, icon: <FiFilter className="text-green-400" />, levels: ['Off', 'On'] },
+    { name: 'Exhaust Fan', index: 2, icon: <FiFilter className="text-green-400" />, levels: ['Off', 'On'] },
+    { name: 'Kipas', index: 1, icon: <FiWind className="text-blue-400" />, levels: ['Off', 'On'] },
+    { name: 'Kipas', index: 2, icon: <FiWind className="text-blue-400" />, levels: ['Off', 'On'] },
   ];
 
   return (
@@ -99,6 +102,7 @@ export default function SystemControlPage() {
               icon={actuator.icon}
               onCommand={sendActuatorCommand}
               activeLevel={actuatorStates[actuatorKey]}
+              levels={actuator.levels}
             />
           );
         })}
