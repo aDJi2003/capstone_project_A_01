@@ -31,7 +31,7 @@ mongoose
 
 // const BROKER_URL = "mqtt://localhost:1883";
 // const TOPIC = "building/room/data";
-const BROKER_URL = 'mqtt://test.mosquitto.org:1883';
+const BROKER_URL = 'mqtt://broker.hivemq.com:1883';
 const TOPIC = 'sensor/data/system';
 const COMMAND_TOPIC = 'building/room/command';
 
