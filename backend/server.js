@@ -33,7 +33,7 @@ mongoose
 // const TOPIC = "building/room/data";
 const BROKER_URL = 'mqtt://broker.hivemq.com:1883';
 const TOPIC = 'sensor/data/system';
-const COMMAND_TOPIC = 'building/room/command';
+const COMMAND_TOPIC = 'denio/keren';
 
 const client = mqtt.connect(BROKER_URL, {
   clientId: `mqtt_backend_subscriber_${Math.random().toString(16).slice(3)}`,
@@ -61,28 +61,23 @@ const zeroTracker = {
 client.on("message", async (topic, payload) => {
   const messageString = payload.toString();
 
-  // 1. Tangani pesan PERINTAH
-  if (topic === COMMAND_TOPIC) {
-    const command = JSON.parse(messageString);
-    console.log(`Command Received: Set ${command.type} ${command.index} to ${command.level}`);
-    return;
-  }
+  // if (topic === COMMAND_TOPIC) {
+  //   const command = JSON.parse(messageString);
+  //   console.log(`Command Received: Set ${command.type} ${command.index} to ${command.level}`);
+  //   return;
+  // }
 
-  // 2. Tangani pesan DATA SENSOR
   if (topic === TOPIC) {
-    // Abaikan baris header
     if (messageString.includes("lux1,lux2,lux3,lux4")) {
       console.log("Received CSV header, ignoring.");
       return;
     }
     
-    // Fungsi internal untuk memproses data
     const processData = async (data) => {
       const newReading = new Reading(data);
       await newReading.save();
       console.log("Data saved to MongoDB!");
 
-      // Logika deteksi error dinamis (Kode ini sudah robust, tidak perlu diubah)
       for (const sensorType in data) {
         data[sensorType].forEach(async (value, index) => {
           const key = `${sensorType}-${index}`; 
@@ -104,7 +99,6 @@ client.on("message", async (topic, payload) => {
       }
     };
 
-    // --- LOGIKA PARSING BARU (Format 11 Kolom) ---
     console.log(`Processing message as CSV: ${messageString}`);
     const stream = Readable.from(messageString);
     stream.pipe(csv({ headers: false })).on("data", async (row) => {
@@ -518,7 +512,7 @@ app.post("/api/control", protect, async (req, res) => {
     return res.status(400).json({ message: "Required fields are missing." });
   }
 
-  const commandTopic = "building/room/command";
+  const commandTopic = COMMAND_TOPIC;
   const commandPayload = JSON.stringify({ type: actuatorType, index, level });
 
   client.publish(commandTopic, commandPayload, async (error) => {
@@ -535,6 +529,7 @@ app.post("/api/control", protect, async (req, res) => {
       });
       await newCommand.save();
       console.log(`Command from ${req.user.email} logged.`);
+      console.log(`Command Received: Set ${actuatorType} ${index} to ${level}`);
     } catch (dbError) {
       console.error("Failed to log command:", dbError);
     }
