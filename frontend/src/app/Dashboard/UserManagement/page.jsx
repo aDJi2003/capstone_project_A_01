@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useDashboard } from '@/context/DashboardContext';
+import { FiDownload } from 'react-icons/fi';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -33,9 +34,49 @@ export default function UserManagementPage() {
     fetchUsers();
   }, [activeMenu]);
 
+  const downloadCSV = (data, filename) => {
+    if (data.length === 0) return;
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row =>
+        headers.map(header => {
+          return `"${String(row[header]).replace(/"/g, '""')}"`; 
+        }).join(',')
+      )
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadUsers = () => {
+    const dataToExport = users.map(user => ({
+      Name: user.email.split('@')[0],
+      Email: user.email,
+      Role: user.role
+    }));
+    downloadCSV(dataToExport, 'user-management.csv');
+  };
+
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-white mb-6">User Management</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold text-white">User Management</h1>
+        <button 
+          onClick={handleDownloadUsers}
+          className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+        >
+          <FiDownload size={14} />
+          <span>Download CSV</span>
+        </button>
+      </div>
       <div className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-x-auto">
         <table className="min-w-full">
           <thead className="bg-gray-700">
