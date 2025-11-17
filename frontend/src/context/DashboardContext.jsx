@@ -7,14 +7,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const DashboardContext = createContext();
 
 const initialActuatorStates = {
-  "Lampu LED-1": "off",
-  "Lampu LED-2": "off",
-  "Lampu LED-3": "off",
-  "Lampu LED-4": "off",
-  "Exhaust Fan-1": "off",
-  "Exhaust Fan-2": "off",
-  "Kipas-1": "off",
-  "Kipas-2": "off",
+  "Lampu LED-1": "auto",
+  "Lampu LED-2": "auto",
+  "Lampu LED-3": "auto",
+  "Lampu LED-4": "auto",
+  "Exhaust Fan-1": "auto",
+  "Exhaust Fan-2": "auto",
+  "Kipas-1": "auto",
+  "Kipas-2": "auto",
 };
 
 export function DashboardProvider({ children }) {
