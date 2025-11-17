@@ -70,7 +70,7 @@ export default function RegisterPage() {
             width={128}
             height={128}
           />
-          <h1 className="mt-4 text-4xl font-bold tracking-wider">KANBAN</h1>
+          <h1 className="mt-4 text-4xl font-bold tracking-wider">ECHOS</h1>
         </div>
 
         {/* Kolom Kanan */}
