@@ -6,7 +6,7 @@ const OUTPUT_FORMAT = 'CSV';
 // const TOPIC = 'building/room/data';
 const BROKER_URL = 'mqtt://broker.hivemq.com:1883';
 const TOPIC = 'sensor/data/system';
-const COMMAND_TOPIC = 'building/room/command';
+const COMMAND_TOPIC = 'denio/keren';
 
 const client = mqtt.connect(BROKER_URL, {
   clientId: `mqtt_sensor_simulator_${Math.random().toString(16).slice(3)}`,
