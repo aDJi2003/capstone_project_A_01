@@ -5,7 +5,6 @@ import dotenv from "dotenv";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import csv from "csv-parser";
 import { Readable } from "stream";
 import nodemailer from 'nodemailer';
@@ -50,22 +49,10 @@ client.on("connect", () => {
   });
 });
 
-const zeroTracker = {
-  suhu: { '0': 0 },         // sensor1 (indeks 0)
-  kelembapan: { '0': 0 },  // sensor1 (indeks 0)
-  cahaya: { '0': 0, '1': 0 }, // sensor1 (indeks 0), sensor2 (indeks 1)
-  gas: { '0': 0 },          // sensor1 (indeks 0)
-  arus: { '0': 0 },         // sensor1 (indeks 0)
-};
+const zeroTracker = {};
 
 client.on("message", async (topic, payload) => {
   const messageString = payload.toString();
-
-  // if (topic === COMMAND_TOPIC) {
-  //   const command = JSON.parse(messageString);
-  //   console.log(`Command Received: Set ${command.type} ${command.index} to ${command.level}`);
-  //   return;
-  // }
 
   if (topic === TOPIC) {
     if (messageString.includes("lux1,lux2,lux3,lux4")) {
@@ -79,23 +66,40 @@ client.on("message", async (topic, payload) => {
       console.log("Data saved to MongoDB!");
 
       for (const sensorType in data) {
-        data[sensorType].forEach(async (value, index) => {
+        const sensorValues = data[sensorType];
+        
+        for (let index = 0; index < sensorValues.length; index++) {
+          const value = sensorValues[index];
           const key = `${sensorType}-${index}`; 
-          if (!zeroTracker[key]) zeroTracker[key] = 0;
-          if (value === 0) zeroTracker[key]++;
-          else zeroTracker[key] = 0;
+
+          if (zeroTracker[key] === undefined) {
+            zeroTracker[key] = 0;
+          }
+          
+          if (value === 0) {
+            zeroTracker[key]++;
+          } else {
+            zeroTracker[key] = 0;
+          }
 
           if (zeroTracker[key] === 3) {
             const sensorIndex = `sensor${index + 1}`;
             console.log(`FAILURE DETECTED: ${sensorType} ${sensorIndex}`);
-            const existingFailure = await Failure.findOne({ sensorType, sensorIndex, resolved: false });
+            
+            const existingFailure = await Failure.findOne({ 
+              sensorType, 
+              sensorIndex, 
+              resolved: false 
+            });
+            
             if (!existingFailure) {
               const message = `Sensor ${sensorType} (${sensorIndex}) reported zero value 3 times in a row.`;
               await Failure.create({ sensorType, sensorIndex, message });
             }
+            
             zeroTracker[key] = 0;
           }
-        });
+        }
       }
     };
 
@@ -117,14 +121,14 @@ client.on("message", async (topic, payload) => {
         // 10:  arus 1
         const jsonData = {
           cahaya: [
-            parseNumeric(row['0'], false),
-            parseNumeric(row['1'], false),
-            parseNumeric(row['2'], false),
-            parseNumeric(row['3'], false)
+            parseNumeric(row['0']),
+            parseNumeric(row['1']),
+            parseNumeric(row['2']),
+            parseNumeric(row['3'])
           ].filter(v => v !== null),
           gas: [
-            parseNumeric(row['4'], false),
-            parseNumeric(row['5'], false)
+            parseNumeric(row['4']),
+            parseNumeric(row['5'])
           ].filter(v => v !== null),
           suhu: [
             parseNumeric(row['6']),
@@ -135,7 +139,7 @@ client.on("message", async (topic, payload) => {
             parseNumeric(row['9'])
           ].filter(v => v !== null),
           arus: [
-            parseNumeric(row['10'], false)
+            parseNumeric(row['10'])
           ].filter(v => v !== null)
         };
 
@@ -200,39 +204,6 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-// app.post("/api/auth/forgot-password", async (req, res) => {
-//   try {
-//     const { email } = req.body;
-//     const user = await User.findOne({ email });
-
-//     if (!user) {
-//       return res
-//         .status(404)
-//         .json({ message: "No user found with that email address." });
-//     }
-
-//     const token = crypto.randomBytes(20).toString("hex");
-//     user.resetPasswordToken = token;
-//     user.resetPasswordExpires = Date.now() + 3600000;
-
-//     await user.save();
-
-//     const resetLink = `http://localhost:3000/reset-password/${token}`;
-
-//     console.log("--------------------");
-//     console.log("PASSWORD RESET LINK (COPY TO BROWSER):");
-//     console.log(resetLink);
-//     console.log("--------------------");
-
-//     res.json({
-//       message:
-//         "A password reset link has been generated. Check the backend console.",
-//     });
-//   } catch (error) {
-//     res.status(500).send("Server Error");
-//   }
-// });
-
 app.post("/api/auth/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
@@ -280,33 +251,6 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
-
-// app.post("/api/auth/reset-password/:token", async (req, res) => {
-//   try {
-//     const { password } = req.body;
-
-//     const user = await User.findOne({
-//       resetPasswordToken: req.params.token,
-//       resetPasswordExpires: { $gt: Date.now() },
-//     });
-
-//     if (!user) {
-//       return res
-//         .status(400)
-//         .json({ message: "Password reset token is invalid or has expired." });
-//     }
-
-//     user.password = await bcrypt.hash(password, 10);
-//     user.resetPasswordToken = undefined;
-//     user.resetPasswordExpires = undefined;
-
-//     await user.save();
-
-//     res.json({ message: "Password has been updated successfully." });
-//   } catch (error) {
-//     res.status(500).send("Server Error");
-//   }
-// });
 
 app.post("/api/auth/reset-password/:token", async (req, res) => {
   const { token } = req.params;
@@ -401,7 +345,6 @@ app.get("/api/history/chart", protect, async (req, res) => {
       .json({ message: "startTime, endTime, and sensorType are required" });
   }
 
-  // Buat output dinamis untuk 4 sensor (jumlah maksimum)
   const outputFields = {
     avgSensor1: { $avg: { $arrayElemAt: [`$${sensorType}`, 0] } },
     avgSensor2: { $avg: { $arrayElemAt: [`$${sensorType}`, 1] } },
