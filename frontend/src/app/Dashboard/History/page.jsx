@@ -5,7 +5,7 @@ import { useDashboard } from "@/context/DashboardContext";
 import SensorChart from "@/components/SensorChart";
 import StatCard from "@/components/StatCard";
 import Dropdown from "@/components/Dropdown";
-import { FiRefreshCw } from "react-icons/fi";
+import { FiRefreshCw, FiAlertCircle } from "react-icons/fi";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -39,11 +39,18 @@ export default function HistoryPage() {
   const [stats, setStats] = useState(null);
   const [chartData, setChartData] = useState({ labels: [], datasets: [] });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(null);
+    
     const token = localStorage.getItem("token");
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      setError("Token autentikasi tidak ditemukan");
+      setLoading(false);
+      return;
+    }
 
     const endTime = new Date();
     const startTime = new Date(endTime.getTime() - timeRanges[selectedRange]);
@@ -57,52 +64,113 @@ export default function HistoryPage() {
 
     try {
       const [statsRes, chartRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/history/stats?${params}`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_BASE_URL}/api/history/chart?${params}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/api/history/stats?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(10000),
+        }),
+        fetch(`${API_BASE_URL}/api/history/chart?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(10000),
+        }),
       ]);
 
-      if (!statsRes.ok || !chartRes.ok) throw new Error("Failed to fetch history data");
+      if (!statsRes.ok) {
+        if (statsRes.status === 401) {
+          throw new Error("Sesi telah berakhir, silakan login kembali");
+        } else if (statsRes.status === 503) {
+          throw new Error("Sumber data sedang tidak tersedia");
+        } else {
+          throw new Error(`Error mengambil statistik (${statsRes.status})`);
+        }
+      }
+
+      if (!chartRes.ok) {
+        if (chartRes.status === 401) {
+          throw new Error("Sesi telah berakhir, silakan login kembali");
+        } else if (chartRes.status === 503) {
+          throw new Error("Sumber data sedang tidak tersedia");
+        } else {
+          throw new Error(`Error mengambil data chart (${chartRes.status})`);
+        }
+      }
 
       const statsData = await statsRes.json();
       const chartRawData = await chartRes.json();
 
-      setStats(statsData);
+      if (!statsData || typeof statsData !== 'object') {
+        throw new Error("Format data statistik tidak valid");
+      }
 
-      const labels = chartRawData.map((d) => new Date(d._id.min).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
-      
-      // --- LOGIKA DATASET DINAMIS ---
-      const datasets = [];
-      const sensorKeys = ['avgSensor1', 'avgSensor2', 'avgSensor3', 'avgSensor4'];
+      if (!Array.isArray(chartRawData)) {
+        throw new Error("Format data chart tidak valid");
+      }
 
-      sensorKeys.forEach((key, index) => {
-        // Cek apakah ada data valid untuk sensor ini
-        if (chartRawData.some(d => d[key] != null)) {
-          datasets.push({
-            label: `${selectedSensor} Sensor ${index + 1} (Avg)`,
-            data: chartRawData.map((d) => d[key]),
-            borderColor: sensorInfo.colors[index % sensorInfo.colors.length],
-            backgroundColor: `${sensorInfo.colors[index % sensorInfo.colors.length]}33`,
-            fill: true,
-            tension: 0.3,
-          });
-        }
+      setStats({
+        maxValue: statsData.maxValue ?? null,
+        minValue: statsData.minValue ?? null,
+        avgValue: statsData.avgValue ?? null,
       });
 
-      setChartData({ labels, datasets });
+      if (chartRawData.length === 0) {
+        setChartData({ labels: [], datasets: [] });
+      } else {
+        const labels = chartRawData.map((d) => {
+          try {
+            return new Date(d._id?.min || d._id).toLocaleTimeString([], { 
+              hour: "2-digit", 
+              minute: "2-digit" 
+            });
+          } catch {
+            return "Invalid Time";
+          }
+        });
+        
+        const datasets = [];
+        const sensorKeys = ['avgSensor1', 'avgSensor2', 'avgSensor3', 'avgSensor4'];
+
+        sensorKeys.forEach((key, index) => {
+          if (chartRawData.some(d => d[key] != null && !isNaN(d[key]))) {
+            datasets.push({
+              label: `${selectedSensor} Sensor ${index + 1} (Avg)`,
+              data: chartRawData.map((d) => {
+                const value = d[key];
+                return (value != null && !isNaN(value)) ? value : null;
+              }),
+              borderColor: sensorInfo.colors[index % sensorInfo.colors.length],
+              backgroundColor: `${sensorInfo.colors[index % sensorInfo.colors.length]}33`,
+              fill: true,
+              tension: 0.3,
+            });
+          }
+        });
+
+        setChartData({ labels, datasets });
+      }
 
     } catch (error) {
       console.error("Failed to fetch history data", error);
+      
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+        setError("Koneksi timeout. Sumber data mungkin sedang tidak tersedia.");
+      } else if (error.message.includes('fetch')) {
+        setError("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
+      } else {
+        setError(error.message || "Terjadi kesalahan saat mengambil data");
+      }
+      
+      setStats(null);
+      setChartData({ labels: [], datasets: [] });
     } finally {
       setLoading(false);
     }
   }, [selectedRange, selectedSensor]);
 
   useEffect(() => {
-      fetchData();
+    fetchData();
   }, [activeMenu, fetchData]);
 
-  const currentUnit = sensorOptions[selectedSensor].unit;
-  const currentThresholds = thresholds[selectedSensor];
+  const currentUnit = sensorOptions[selectedSensor]?.unit || '';
+  const currentThresholds = thresholds[selectedSensor] || { upper: 0, lower: 0 };
 
   return (
     <div>
@@ -124,7 +192,7 @@ export default function HistoryPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-wait"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-wait transition-colors"
           >
             <FiRefreshCw className={loading ? "animate-spin" : ""} />
             <span>{loading ? "Refreshing..." : "Refresh"}</span>
@@ -132,36 +200,55 @@ export default function HistoryPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="mb-6 bg-red-900/30 border border-red-700 text-red-200 px-4 py-3 rounded-lg flex items-start gap-3">
+          <FiAlertCircle className="flex-shrink-0 mt-0.5" size={20} />
+          <div className="flex-1">
+            <p className="font-medium">Error</p>
+            <p className="text-sm mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center items-center h-96">
-          <p className="text-gray-400">Loading historical data...</p>
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+            <p className="text-gray-400">Loading historical data...</p>
+          </div>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <StatCard
               title="Max Value"
-              value={stats?.maxValue?.toFixed(2) || "N/A"}
+              value={stats?.maxValue != null ? stats.maxValue.toFixed(2) : "N/A"}
               unit={currentUnit}
             />
             <StatCard
               title="Min Value"
-              value={stats?.minValue?.toFixed(2) || "N/A"}
+              value={stats?.minValue != null ? stats.minValue.toFixed(2) : "N/A"}
               unit={currentUnit}
             />
             <StatCard
               title="Average"
-              value={stats?.avgValue?.toFixed(2) || "N/A"}
+              value={stats?.avgValue != null ? stats.avgValue.toFixed(2) : "N/A"}
               unit={currentUnit}
             />
           </div>
           <div className="bg-gray-800 p-4 rounded-lg shadow-lg h-96">
-            <SensorChart
-              title={`${selectedSensor} - ${selectedRange}`}
-              chartData={chartData}
-              unit={currentUnit}
-              thresholds={currentThresholds}
-            />
+            {chartData.datasets.length === 0 && !error ? (
+              <div className="flex justify-center items-center h-full">
+                <p className="text-gray-400">Tidak ada data tersedia untuk rentang waktu ini</p>
+              </div>
+            ) : (
+              <SensorChart
+                title={`${selectedSensor} - ${selectedRange}`}
+                chartData={chartData}
+                unit={currentUnit}
+                thresholds={currentThresholds}
+              />
+            )}
           </div>
         </>
       )}
