@@ -55,8 +55,8 @@ export default function Sidebar() {
       >
         <div className="flex items-center justify-center p-6 border-b border-gray-700">
           <Image
-            src="/kanbanLogo.svg"
-            alt="Kanban Logo"
+            src="/echosLogo.png"
+            alt="ECHOS Logo"
             width={100}
             height={40}
           />

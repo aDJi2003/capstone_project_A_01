@@ -65,8 +65,8 @@ export default function RegisterPage() {
         {/* Kolom Kiri */}
         <div className="hidden md:flex w-1/2 flex-col items-center justify-center rounded-l-xl bg-gray-700 p-12 text-center">
           <Image
-            src="/kanbanLogo.svg"
-            alt="Kanban Logo"
+            src="/echosLogo.png"
+            alt="ECHOS Logo"
             width={128}
             height={128}
           />
@@ -77,8 +77,8 @@ export default function RegisterPage() {
         <div className="w-full md:w-1/2 p-8 md:p-12">
           <div className="flex justify-center md:justify-start">
              <Image
-                src="/kanbanLogo.svg"
-                alt="Kanban Icon"
+                src="/echosLogo.png"
+                alt="ECHOS Icon"
                 width={40}
                 height={40}
               />
