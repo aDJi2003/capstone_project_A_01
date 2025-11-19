@@ -578,6 +578,7 @@ app.get("/api/data/ike", protect, async (req, res) => {
     res.json({
       ikeValue: ikeValue.toFixed(2),
       classification: classification,
+      energyWh: totalWattHours.toFixed(2),
     });
 
   } catch (error) {

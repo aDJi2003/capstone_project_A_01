@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useDashboard } from '@/context/DashboardContext';
 import SensorChart from '@/components/SensorChart';
 import StatCard from '@/components/StatCard';
-import { FiChevronDown, FiPause, FiPlay, FiCpu } from 'react-icons/fi';
+import { FiChevronDown, FiPause, FiPlay, FiCpu, FiZap } from 'react-icons/fi';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -61,6 +61,28 @@ const IkeCard = ({ data }) => {
             {data.ikeValue} <span className="text-sm">Wh/m²/jam</span>
             <span className={`ml-2 text-lg ${colorClass}`}>({data.classification})</span>
           </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const EnergyCard = ({ data }) => {
+  return (
+    <div className="bg-gray-800 p-4 rounded-lg shadow-lg flex items-center space-x-4 w-full">
+      <div className="bg-gray-700 p-3 rounded-lg">
+        <FiZap className="h-8 w-8 text-yellow-400" />
+      </div>
+      <div>
+        <p className="text-sm text-gray-400">Total Penggunaan Energi (1 Jam Terakhir)</p>
+        {!data ? (
+          <p className="text-xl font-semibold text-white animate-pulse">Loading...</p>
+        ) : (
+          <div>
+            <p className="text-2xl font-bold text-white">
+              {data.energyWh} <span className="text-sm text-gray-400">Wh</span>
+            </p>
+          </div>
         )}
       </div>
     </div>
@@ -285,8 +307,9 @@ export default function DashboardPage() {
       </div>
 
       {/* IKE Card */}
-      <div className="mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <IkeCard data={ikeData} />
+        <EnergyCard data={ikeData} />
       </div>
 
       {/* Charts Section */}
