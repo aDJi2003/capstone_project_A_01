@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useDashboard } from "@/context/DashboardContext";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiZap, FiWind, FiFilter } from "react-icons/fi";
+import Dropdown from "@/components/Dropdown";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -57,6 +59,7 @@ const ActuatorCard = ({
 export default function SystemControlPage() {
   const { activeMenu, actuatorStates, updateActuatorState, user } =
     useDashboard();
+  const [filterType, setFilterType] = useState("Semua");
 
   const sendActuatorCommand = async (actuatorType, index, level) => {
     const actuatorKey = `${
@@ -142,12 +145,27 @@ export default function SystemControlPage() {
     },
   ];
 
+  const filteredActuators = actuators.filter((actuator) => {
+    if (filterType === "Semua") return true;
+    return actuator.name === filterType;
+  });
+
+  const filterOptions = ["Semua", "Lampu LED", "Exhaust Fan", "Kipas"];
+
   return (
     <div>
       <ToastContainer theme="dark" position="top-right" autoClose={2000} />
-      <h1 className="text-2xl font-semibold text-white mb-6">System Control</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-semibold text-white">System Control</h1>
+        <Dropdown
+          label="Filter"
+          options={filterOptions}
+          selectedValue={filterType}
+          onSelect={setFilterType}
+        />
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {actuators.map((actuator) => {
+        {filteredActuators.map((actuator) => {
           const actuatorKey = `${actuator.name}-${actuator.index}`;
           return (
             <ActuatorCard
