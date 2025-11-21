@@ -26,9 +26,9 @@ const sensorOptions = {
 
 const thresholds = {
   Suhu: { upper: 27, lower: 25 },
-  Kelembapan: { upper: 65, lower: 55 },
-  'Intensitas Cahaya': { upper: 650, lower: 250 },
-  'Kualitas Udara': { upper: 350, lower: 100 },
+  Kelembapan: { upper: 60, lower: 40 },
+  'Intensitas Cahaya': { upper: 750, lower: 500 },
+  'Kualitas Udara': { upper: 1000, lower: 0 },
   'Penggunaan Arus': { upper: 1.2, lower: 0.2 },
 };
 

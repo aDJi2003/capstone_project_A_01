@@ -13,11 +13,19 @@ const IKE_API_URL = `${API_BASE_URL}/api/data/ike`;
 
 const thresholds = {
   Suhu: { upper: 27, lower: 25 },
-  Kelembapan: { upper: 62, lower: 58 },
-  "Intensitas Cahaya": { upper: 650, lower: 250 },
-  "Kualitas Udara": { upper: 400, lower: 200 },
-  "Penggunaan Arus": { upper: 2.5, lower: 0.2 },
+  Kelembapan: { upper: 60, lower: 40 },
+  'Intensitas Cahaya': { upper: 750, lower: 500 },
+  'Kualitas Udara': { upper: 1000, lower: 0 },
+  'Penggunaan Arus': { upper: 1.2, lower: 0.2 },
 };
+
+// const thresholds = {
+//   Suhu: { upper: 27, lower: 25 },
+//   Kelembapan: { upper: 62, lower: 58 },
+//   "Intensitas Cahaya": { upper: 650, lower: 250 },
+//   "Kualitas Udara": { upper: 400, lower: 200 },
+//   "Penggunaan Arus": { upper: 2.5, lower: 0.2 },
+// };
 
 const chartOptions = [
   "Suhu",
