@@ -32,7 +32,7 @@ mongoose
 // const TOPIC = "building/room/data";
 const BROKER_URL = 'mqtt://broker.hivemq.com:1883';
 const TOPIC = 'sensor/data/system';
-const COMMAND_TOPIC = 'denio/keren';
+const COMMAND_TOPIC = 'device/control';
 
 const client = mqtt.connect(BROKER_URL, {
   clientId: `mqtt_backend_subscriber_${Math.random().toString(16).slice(3)}`,
