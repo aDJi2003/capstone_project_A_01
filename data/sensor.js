@@ -1,7 +1,5 @@
 import mqtt from 'mqtt';
 
-const OUTPUT_FORMAT = 'CSV';
-
 // const BROKER_URL = 'mqtt://localhost:1883';
 // const TOPIC = 'building/room/data';
 const BROKER_URL = 'mqtt://broker.hivemq.com:1883';
@@ -26,17 +24,17 @@ client.on('connect', () => {
 
   setInterval(() => {
     const data = [
-      getRandomValue(200, 700, 0), // cahaya 1
-      getRandomValue(200, 700, 0), // cahaya 2
-      getRandomValue(200, 700, 0), // cahaya 3
-      getRandomValue(200, 700, 0), // cahaya 4
-      getRandomValue(150, 400, 0), // gas 1
-      getRandomValue(160, 410, 0), // gas 2
-      getRandomValue(24, 28),     // suhu 1
-      getRandomValue(25, 29),     // suhu 2
-      getRandomValue(55, 65),     // kelembapan 1
-      getRandomValue(57, 67),     // kelembapan 2
-      getRandomValue(0.5, 3, 0)    // arus 1
+      getRandomValue(200, 700, 1), // cahaya 1
+      getRandomValue(200, 700, 1), // cahaya 2
+      getRandomValue(200, 700, 1), // cahaya 3
+      getRandomValue(200, 700, 1), // cahaya 4
+      getRandomValue(150, 400, 1), // gas 1
+      getRandomValue(160, 410, 1), // gas 2
+      getRandomValue(24, 28, 1), // suhu 1
+      getRandomValue(25, 29, 1), // suhu 2
+      getRandomValue(55, 65, 1), // kelembapan 1
+      getRandomValue(57, 67, 1), // kelembapan 2
+      getRandomValue(0.15, 1.0, 1) // arus 1
     ];
 
     const payload = data.join(',');
